@@ -1,14 +1,11 @@
-package auth
+package jwt
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
-
-var secret = []byte(os.Getenv("JWT_SECRET"))
 
 type UserCustomClaims struct {
 	UserId int `json:"userId"`
@@ -20,10 +17,12 @@ type IJwtService interface {
 	JwtVerify(tokenStr string) (*UserCustomClaims, error)
 }
 
-type JwtService struct{}
+type JwtService struct {
+	secret []byte
+}
 
-func NewJwtService() *JwtService {
-	return &JwtService{}
+func NewJwtService(secret []byte) *JwtService {
+	return &JwtService{secret: secret}
 }
 
 func NewUserCustomClaims(userId int, expireTime int) *UserCustomClaims {
@@ -39,7 +38,7 @@ func NewUserCustomClaims(userId int, expireTime int) *UserCustomClaims {
 func (service *JwtService) JwtSign(claim *UserCustomClaims) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
 
-	if tokenStr, err := token.SignedString(secret); err != nil {
+	if tokenStr, err := token.SignedString(service.secret); err != nil {
 		fmt.Printf("JWT sign err: %s", err)
 		return ""
 	} else {
@@ -50,7 +49,7 @@ func (service *JwtService) JwtSign(claim *UserCustomClaims) string {
 func (service *JwtService) JwtVerify(tokenStr string) (*UserCustomClaims, error) {
 	claims := &UserCustomClaims{}
 	_, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (any, error) {
-		return secret, nil
+		return service.secret, nil
 	})
 
 	if err != nil {

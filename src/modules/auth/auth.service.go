@@ -2,12 +2,13 @@ package auth
 
 import (
 	"TQP0403/todo-list/src/common"
+	"TQP0403/todo-list/src/config"
 	"TQP0403/todo-list/src/helper"
 	"TQP0403/todo-list/src/models"
 	"TQP0403/todo-list/src/modules/auth/dtos"
 	"TQP0403/todo-list/src/modules/cache"
+	"TQP0403/todo-list/src/modules/jwt"
 	"errors"
-	"os"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -21,31 +22,25 @@ type AuthService struct {
 	accessExpire  int
 	refreshExpire int
 	repo          IAuthRepo
-	jwtService    IJwtService
+	jwtService    jwt.IJwtService
 	authCache     IAuthCache
 }
 
 type IAuthService interface {
-	GetJwtService() IJwtService
+	GetJwtService() jwt.IJwtService
 	Register(param *dtos.CreateUserDto) (*LoginResponse, error)
 	Login(param *dtos.LoginDto) (*LoginResponse, error)
 	RefreshToken(token string) (*LoginResponse, error)
 	GetProfile(id int) (*models.User, error)
 }
 
-func (service *AuthService) GetJwtService() IJwtService {
+func (service *AuthService) GetJwtService() jwt.IJwtService {
 	return service.jwtService
 }
 
-func NewService(repo *AuthRepo, jwtService *JwtService, cacheService *cache.CacheService) *AuthService {
-	accessExpire := 86400
-	if expire := os.Getenv("JWT_ACCESS_EXPIRE"); expire != "" {
-		accessExpire = helper.ParseInt(expire)
-	}
-	refreshExpire := 86400 * 30
-	if expire := os.Getenv("JWT_REFRESH_EXPIRE"); expire != "" {
-		refreshExpire = helper.ParseInt(expire)
-	}
+func NewService(repo *AuthRepo, jwtService *jwt.JwtService, cacheService *cache.CacheService) *AuthService {
+	accessExpire := helper.ParseInt(config.Getenv("JWT_ACCESS_EXPIRE", "86400"))
+	refreshExpire := helper.ParseInt(config.Getenv("JWT_ACCESS_EXPIRE", "2592000"))
 
 	authCache := NewAuthCache(cacheService)
 	return &AuthService{
@@ -105,14 +100,12 @@ func (service *AuthService) RefreshToken(token string) (*LoginResponse, error) {
 
 func (service *AuthService) getToken(id int) (*LoginResponse, error) {
 	_, err := service.repo.GetUserById(id)
-
 	if err != nil {
 		return nil, err
 	}
 
-	accClaim := NewUserCustomClaims(id, service.accessExpire)
-	refClaim := NewUserCustomClaims(id, service.refreshExpire)
-
+	accClaim := jwt.NewUserCustomClaims(id, service.accessExpire)
+	refClaim := jwt.NewUserCustomClaims(id, service.refreshExpire)
 	res := &LoginResponse{
 		AccessToken:  service.jwtService.JwtSign(accClaim),
 		RefreshToken: service.jwtService.JwtSign(refClaim),

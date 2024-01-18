@@ -3,6 +3,7 @@ package auth
 import (
 	"TQP0403/todo-list/src/common"
 	"TQP0403/todo-list/src/modules/auth/dtos"
+	"TQP0403/todo-list/src/modules/jwt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +24,7 @@ func (ctrl *AuthController) Register(router *gin.Engine) {
 		group.POST("/register", ctrl.handleRegister)
 		group.POST("/login", ctrl.handleLogin)
 		group.POST("/refresh-token", ctrl.handleRefreshToken)
-		group.GET("/profile", JwtAuthMiddleware(jwtService), ctrl.handleGetProfile)
+		group.GET("/profile", jwt.JwtMiddleware(jwtService), ctrl.handleGetProfile)
 	}
 }
 
@@ -90,7 +91,7 @@ func (ctrl *AuthController) handleRegister(ctx *gin.Context) {
 }
 
 func (ctrl *AuthController) handleGetProfile(ctx *gin.Context) {
-	userId := GetUserId(ctx)
+	userId := jwt.GetUserId(ctx)
 
 	if res, err := ctrl.service.GetProfile(userId); err != nil {
 		cusErr := common.NewInternalServerError(err)

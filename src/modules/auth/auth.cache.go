@@ -22,7 +22,8 @@ func NewAuthCache(cacheService *cache.CacheService) *AuthCache {
 
 func (service *AuthCache) GetCacheUser(id int) (*models.User, error) {
 	user := &models.User{}
-	str, err := service.cacheService.Get(fmt.Sprintf("user:%d", id))
+	key := fmt.Sprintf("user:%d", id)
+	str, err := service.cacheService.Get(key)
 	if err != nil {
 		return nil, err
 	}
@@ -33,8 +34,18 @@ func (service *AuthCache) GetCacheUser(id int) (*models.User, error) {
 }
 
 func (service *AuthCache) SetCacheUser(user *models.User) error {
-	err := service.cacheService.Set(fmt.Sprintf("user:%d", user.ID), user, time.Minute*5)
-	if err != nil {
+	key := fmt.Sprintf("user:%d", user.ID)
+	ttl := time.Minute * 5
+	if err := service.cacheService.Set(key, user, ttl); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (service *AuthCache) DelCacheUser(id int) error {
+	key := fmt.Sprintf("user:%d", id)
+	if err := service.cacheService.Del(key); err != nil {
 		return err
 	}
 

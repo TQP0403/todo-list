@@ -3,7 +3,7 @@ package task
 import (
 	"TQP0403/todo-list/src/common"
 	"TQP0403/todo-list/src/helper"
-	"TQP0403/todo-list/src/modules/auth"
+	"TQP0403/todo-list/src/modules/jwt"
 	"TQP0403/todo-list/src/modules/task/dtos"
 	"net/http"
 
@@ -12,26 +12,26 @@ import (
 
 type TaskController struct {
 	service    ITaskService
-	jwtService auth.IJwtService
+	jwtService jwt.IJwtService
 }
 
-func NewController(service *TaskService, jwtService *auth.JwtService) *TaskController {
+func NewController(service *TaskService, jwtService *jwt.JwtService) *TaskController {
 	return &TaskController{service: service, jwtService: jwtService}
 }
 
 func (ctrl *TaskController) Register(router *gin.Engine) {
 	group := router.Group("/api/task")
 	{
-		group.POST("/", auth.JwtAuthMiddleware(ctrl.jwtService), ctrl.handleCreateTask)
-		group.GET("/", auth.JwtAuthMiddleware(ctrl.jwtService), ctrl.handleGetListTask)
-		group.GET("/:id", auth.JwtAuthMiddleware(ctrl.jwtService), ctrl.handleGetTaskById)
-		group.PUT("/:id", auth.JwtAuthMiddleware(ctrl.jwtService), ctrl.handleUpdateTask)
-		group.DELETE("/:id", auth.JwtAuthMiddleware(ctrl.jwtService), ctrl.handleDeleteTask)
+		group.POST("/", jwt.JwtMiddleware(ctrl.jwtService), ctrl.handleCreateTask)
+		group.GET("/", jwt.JwtMiddleware(ctrl.jwtService), ctrl.handleGetListTask)
+		group.GET("/:id", jwt.JwtMiddleware(ctrl.jwtService), ctrl.handleGetTaskById)
+		group.PUT("/:id", jwt.JwtMiddleware(ctrl.jwtService), ctrl.handleUpdateTask)
+		group.DELETE("/:id", jwt.JwtMiddleware(ctrl.jwtService), ctrl.handleDeleteTask)
 	}
 }
 
 func (ctrl *TaskController) handleCreateTask(ctx *gin.Context) {
-	userId := auth.GetUserId(ctx)
+	userId := jwt.GetUserId(ctx)
 
 	var reqData dtos.CreateTaskDto
 	if err := ctx.ShouldBind(&reqData); err != nil {
@@ -52,7 +52,7 @@ func (ctrl *TaskController) handleCreateTask(ctx *gin.Context) {
 
 func (ctrl *TaskController) handleGetListTask(ctx *gin.Context) {
 	pQuery := common.BindPagination(ctx)
-	userId := auth.GetUserId(ctx)
+	userId := jwt.GetUserId(ctx)
 
 	tasks, err := ctrl.service.GetListTask(userId, &pQuery)
 
@@ -69,7 +69,7 @@ func (ctrl *TaskController) handleGetListTask(ctx *gin.Context) {
 }
 
 func (ctrl *TaskController) handleGetTaskById(ctx *gin.Context) {
-	userId := auth.GetUserId(ctx)
+	userId := jwt.GetUserId(ctx)
 
 	id := helper.ParseInt(ctx.Param("id"))
 
@@ -82,7 +82,7 @@ func (ctrl *TaskController) handleGetTaskById(ctx *gin.Context) {
 }
 
 func (ctrl *TaskController) handleUpdateTask(ctx *gin.Context) {
-	userId := auth.GetUserId(ctx)
+	userId := jwt.GetUserId(ctx)
 
 	var reqData dtos.UpdateTaskDto
 
@@ -102,7 +102,7 @@ func (ctrl *TaskController) handleUpdateTask(ctx *gin.Context) {
 }
 
 func (ctrl *TaskController) handleDeleteTask(ctx *gin.Context) {
-	userId := auth.GetUserId(ctx)
+	userId := jwt.GetUserId(ctx)
 	id := helper.ParseInt(ctx.Param("id"))
 
 	if err := ctrl.service.DeleteTask(userId, id); err != nil {
