@@ -2,10 +2,10 @@ package db
 
 import (
 	"TQP0403/todo-list/src/config"
+	"TQP0403/todo-list/src/helper"
 	"TQP0403/todo-list/src/models"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"gorm.io/driver/postgres"
@@ -27,23 +27,18 @@ func Init() {
 
 	var newLogger logger.Interface
 	if dbLog := config.Getenv("DB_LOG", "false"); dbLog == "true" {
-		newLogger = logger.New(
-			log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
-			logger.Config{
-				SlowThreshold:             time.Second, // Slow SQL threshold
-				LogLevel:                  logger.Info, // Log level
-				IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
-				ParameterizedQueries:      true,        // Don't include params in the SQL log
-				Colorful:                  true,        // Disable color
-			},
-		)
+		newLogger = logger.Default.LogMode(logger.Info)
 	}
 
 	var err error
 	db, err = gorm.Open(
-		postgres.Open(dsn),
+		postgres.New(postgres.Config{
+			DSN:                  dsn,
+			PreferSimpleProtocol: true, // disables implicit prepared statement usage
+		}),
 		&gorm.Config{
-			Logger: newLogger,
+			Logger:      newLogger,
+			PrepareStmt: true,
 			NamingStrategy: schema.NamingStrategy{
 				// TablePrefix:   "YOUR_SCHEMA_NAME.", // schema name
 				SingularTable: false,
@@ -54,6 +49,25 @@ func Init() {
 	if err != nil {
 		log.Fatalln("Database connect error", err)
 	}
+
+	sqlDB, err := db.DB()
+
+	if err != nil {
+		log.Fatalln("Database connect error", err)
+	}
+
+	// SetMaxIdleConns sets the maximum number of connections in the idle connection pool.
+	sqlDB.SetMaxIdleConns(10)
+
+	// SetMaxOpenConns sets the maximum number of open connections to the database.
+	maxConn := helper.ParseInt(config.Getenv("DB_CONNECTION_POOL", "0"))
+	if maxConn == 0 {
+		maxConn = 100
+	}
+	sqlDB.SetMaxOpenConns(maxConn)
+
+	// SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
+	sqlDB.SetConnMaxLifetime(time.Hour)
 }
 
 func GetDB() *gorm.DB {
