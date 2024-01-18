@@ -11,13 +11,13 @@ This is a simple and secure Todo-List backend API built with Golang, Gin, Gorm, 
 - [License](#license)
 
 ## Features
-- RESTful API endpoints for managing todo task:
+- RESTful API endpoints for managing todo task
 - Create, read, update, and delete todo task
-- User authentication and authorization using JWT-Go:
+- User authentication and authorization using JWT-Go
 - Secure login and access control for protected endpoints
-- Database persistence with PostgreSQL via GORM:
-- Persistent storage of todo items
-- Clear project structure and documentation:
+- Database persistence with PostgreSQL via GORM
+- Persistent storage of tasks
+- Clear project structure
 - Easy to understand and maintain
 
 ## Requirements
