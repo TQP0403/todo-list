@@ -7,7 +7,6 @@ import (
 	"TQP0403/todo-list/src/server"
 	"fmt"
 	"log"
-	"os"
 
 	_ "TQP0403/todo-list/docs"
 
@@ -34,26 +33,24 @@ import (
 func main() {
 	config.Init()
 
-	db.Init()
-
 	router := gin.Default()
 	router.ForwardedByClientIP = true
 
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
-
 	router.Use(middlewares.CORSMiddleware())
 
-	s := server.Default(db.GetDB())
-	s.Register(router)
-
-	env := os.Getenv("ENV")
-	if env != "production" {
+	db.Init()
+	if env := config.Getenv("ENV", "development"); env != "production" {
 		db.Migrate()
 		router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 
-	if err := router.Run(fmt.Sprintf(":%s", os.Getenv("PORT"))); err != nil {
+	s := server.Default(db.GetDB())
+	s.Register(router)
+
+	port := fmt.Sprintf(":%s", config.Getenv("PORT", "8080"))
+	if err := router.Run(port); err != nil {
 		log.Fatalf("Go Gin run err: %s\n", err)
 	}
 }
