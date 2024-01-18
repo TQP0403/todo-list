@@ -3,6 +3,7 @@ package auth
 import (
 	"TQP0403/todo-list/src/models"
 	"TQP0403/todo-list/src/modules/auth/dtos"
+	"errors"
 
 	"gorm.io/gorm"
 )
@@ -24,7 +25,7 @@ func NewRepo(db *gorm.DB) *AuthRepo {
 
 func (repo *AuthRepo) IsExistUserName(username string) (bool, error) {
 	if _, err := repo.GetUserByUserName(username); err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
 		return false, err
