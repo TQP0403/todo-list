@@ -10,6 +10,7 @@ import (
 type IAuthCache interface {
 	GetCacheUser(id int) (*models.User, error)
 	SetCacheUser(user *models.User) error
+	DelCacheUser(id int) error
 }
 
 type AuthCache struct {
@@ -23,11 +24,7 @@ func NewAuthCache(cacheService *cache.CacheService) *AuthCache {
 func (service *AuthCache) GetCacheUser(id int) (*models.User, error) {
 	user := &models.User{}
 	key := fmt.Sprintf("user:%d", id)
-	str, err := service.cacheService.Get(key)
-	if err != nil {
-		return nil, err
-	}
-	if err = user.Unmarshal(str); err != nil {
+	if err := service.cacheService.Get(key, user); err != nil {
 		return nil, err
 	}
 	return user, nil

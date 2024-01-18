@@ -9,8 +9,7 @@ import (
 	"TQP0403/todo-list/src/modules/cache"
 	"TQP0403/todo-list/src/modules/jwt"
 	"errors"
-
-	"github.com/redis/go-redis/v9"
+	"fmt"
 )
 
 type LoginResponse struct {
@@ -117,14 +116,17 @@ func (service *AuthService) getToken(id int) (*LoginResponse, error) {
 func (service *AuthService) GetProfile(id int) (*models.User, error) {
 	user, err := service.authCache.GetCacheUser(id)
 
-	if errors.Is(err, redis.Nil) {
+	if err != nil {
 		user, err = service.repo.GetUserById(id)
+	} else {
+		return user, nil
 	}
 	if err != nil {
 		return nil, err
 	}
 	if err = service.authCache.SetCacheUser(user); err != nil {
-		return nil, err
+		// return nil, err
+		fmt.Println(err)
 	}
 
 	return user, nil

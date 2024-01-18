@@ -10,14 +10,19 @@ import (
 )
 
 type ICacheService interface {
+	HSet(key string, val interface{}, ttl time.Duration) error
+	HGet(key string, val interface{}) error
+	HDel(key string) error
+
 	Set(key string, val interface{}, ttl time.Duration) error
-	Get(key string) (string, error)
+	Get(key string, val interface{}) error
 	Del(key string) error
 }
 
 type CacheService struct {
-	client *redis.Client
-	ctx    context.Context
+	client     *redis.Client
+	ctx        context.Context
+	ttlDefault time.Duration
 }
 
 func NewDefaultCacheService() *CacheService {
@@ -33,23 +38,45 @@ func NewDefaultCacheService() *CacheService {
 		config.Getenv("REDIS_HOST", "localhost"),
 		config.Getenv("REDIS_PORT", "6379"),
 	)
-	if opt, err := redis.ParseURL(redisUrl); err != nil {
+	opt, err := redis.ParseURL(redisUrl)
+	if err != nil {
 		panic(err)
-	} else {
-		return &CacheService{ctx: context.Background(), client: redis.NewClient(opt)}
 	}
+	client := redis.NewClient(opt)
+
+	return &CacheService{
+		ctx:        context.Background(),
+		client:     client,
+		ttlDefault: time.Hour,
+	}
+}
+
+func (s *CacheService) HSet(key string, val interface{}, ttl time.Duration) error {
+	if ttl == 0 {
+		ttl = s.ttlDefault
+	}
+
+	return s.client.HSet(s.ctx, key, val, ttl).Err()
+}
+
+func (s *CacheService) HGet(key string, val interface{}) error {
+	return s.client.HGetAll(s.ctx, key).Scan(&val)
+}
+
+func (s *CacheService) HDel(key string) error {
+	return s.client.HDel(s.ctx, key).Err()
 }
 
 func (s *CacheService) Set(key string, val interface{}, ttl time.Duration) error {
 	if ttl == 0 {
-		ttl = time.Hour
+		ttl = s.ttlDefault
 	}
 
 	return s.client.Set(s.ctx, key, val, ttl).Err()
 }
 
-func (s *CacheService) Get(key string) (string, error) {
-	return s.client.Get(s.ctx, key).Result()
+func (s *CacheService) Get(key string, val interface{}) error {
+	return s.client.Get(s.ctx, key).Scan(&val)
 }
 
 func (s *CacheService) Del(key string) error {

@@ -32,11 +32,15 @@ func (user User) String() string {
 	)
 }
 
-func (user User) MarshalBinary() ([]byte, error) {
+func (user *User) MarshalBinary() (data []byte, err error) {
 	return json.Marshal(user)
 }
 
-func (user User) Marshal() (string, error) {
+func (user *User) UnmarshalBinary(data []byte) error {
+	return json.Unmarshal(data, user)
+}
+
+func (user *User) Marshal() (string, error) {
 	// struct to string
 	if data, err := json.Marshal(user); err != nil {
 		return "", err

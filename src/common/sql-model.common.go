@@ -21,7 +21,8 @@ type IModel interface {
 }
 
 type IJsonModel interface {
-	MarshalBinary() ([]byte, error)
+	MarshalBinary() (data []byte, err error)
+	UnmarshalBinary(data []byte) error
 	// to json string
 	Marshal() (string, error)
 	// fromjson string
