@@ -3,6 +3,7 @@ package server
 import (
 	"TQP0403/todo-list/src/modules/app"
 	"TQP0403/todo-list/src/modules/auth"
+	"TQP0403/todo-list/src/modules/cache"
 	"TQP0403/todo-list/src/modules/task"
 
 	"github.com/gin-gonic/gin"
@@ -30,9 +31,10 @@ func Default(db *gorm.DB) *Router {
 	taskRepo := task.NewRepo(db)
 
 	// services
+	cacheService := cache.NewDefaultCacheService()
 	appService := app.NewService()
 	jwtService := auth.NewJwtService()
-	authService := auth.NewService(authRepo, jwtService)
+	authService := auth.NewService(authRepo, jwtService, cacheService)
 	taskService := task.NewService(taskRepo)
 
 	// controllers

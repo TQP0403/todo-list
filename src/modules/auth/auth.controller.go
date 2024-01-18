@@ -17,11 +17,13 @@ func NewController(service *AuthService) *AuthController {
 }
 
 func (ctrl *AuthController) Register(router *gin.Engine) {
+	jwtService := ctrl.service.GetJwtService()
 	group := router.Group("/api/auth")
 	{
 		group.POST("/register", ctrl.handleRegister)
 		group.POST("/login", ctrl.handleLogin)
 		group.POST("/refresh-token", ctrl.handleRefreshToken)
+		group.GET("/profile", JwtAuthMiddleware(jwtService), ctrl.handleGetProfile)
 	}
 }
 
@@ -85,4 +87,15 @@ func (ctrl *AuthController) handleRegister(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, common.NewSuccessResponse(res))
+}
+
+func (ctrl *AuthController) handleGetProfile(ctx *gin.Context) {
+	userId := GetUserId(ctx)
+
+	if res, err := ctrl.service.GetProfile(userId); err != nil {
+		cusErr := common.NewInternalServerError(err)
+		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(*cusErr))
+	} else {
+		ctx.JSON(http.StatusOK, common.NewSuccessResponse(res))
+	}
 }

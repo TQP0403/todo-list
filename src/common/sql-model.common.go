@@ -18,6 +18,10 @@ type IModel interface {
 	String() string
 	// gorm table name
 	TableName() string
+}
+
+type IJsonModel interface {
+	MarshalBinary() ([]byte, error)
 	// to json string
 	Marshal() (string, error)
 	// fromjson string

@@ -44,6 +44,10 @@ func (task Task) String() string {
 	)
 }
 
+func (task Task) MarshalBinary() ([]byte, error) {
+	return json.Marshal(task)
+}
+
 func (task Task) Marshal() (string, error) {
 	// struct to string
 	if data, err := json.Marshal(task); err != nil {

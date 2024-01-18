@@ -21,12 +21,19 @@ type CacheService struct {
 }
 
 func NewDefaultCacheService() *CacheService {
-	if opt, err := redis.ParseURL(fmt.Sprintf("redis://%s:%s@%s:%s/0",
+	redisStr := "redis"
+	if config.Getenv("REDIS_TLS", "false") == "true" {
+		redisStr = "rediss"
+	}
+
+	redisUrl := fmt.Sprintf("%s://%s:%s@%s:%s/0",
+		redisStr,
 		config.Getenv("REDIS_USER", ""),
 		config.Getenv("REDIS_PASS", ""),
 		config.Getenv("REDIS_HOST", "localhost"),
 		config.Getenv("REDIS_PORT", "6379"),
-	)); err != nil {
+	)
+	if opt, err := redis.ParseURL(redisUrl); err != nil {
 		panic(err)
 	} else {
 		return &CacheService{ctx: context.Background(), client: redis.NewClient(opt)}

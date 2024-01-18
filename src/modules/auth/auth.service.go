@@ -5,8 +5,11 @@ import (
 	"TQP0403/todo-list/src/helper"
 	"TQP0403/todo-list/src/models"
 	"TQP0403/todo-list/src/modules/auth/dtos"
+	"TQP0403/todo-list/src/modules/cache"
 	"errors"
 	"os"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type LoginResponse struct {
@@ -18,27 +21,40 @@ type AuthService struct {
 	accessExpire  int
 	refreshExpire int
 	repo          IAuthRepo
-	jwt           IJwtService
+	jwtService    IJwtService
+	authCache     IAuthCache
 }
 
 type IAuthService interface {
+	GetJwtService() IJwtService
 	Register(param *dtos.CreateUserDto) (*LoginResponse, error)
 	Login(param *dtos.LoginDto) (*LoginResponse, error)
 	RefreshToken(token string) (*LoginResponse, error)
+	GetProfile(id int) (*models.User, error)
 }
 
-func NewService(repo *AuthRepo, jwt *JwtService) *AuthService {
+func (service *AuthService) GetJwtService() IJwtService {
+	return service.jwtService
+}
+
+func NewService(repo *AuthRepo, jwtService *JwtService, cacheService *cache.CacheService) *AuthService {
 	accessExpire := 86400
 	if expire := os.Getenv("JWT_ACCESS_EXPIRE"); expire != "" {
 		accessExpire = helper.ParseInt(expire)
 	}
-
 	refreshExpire := 86400 * 30
 	if expire := os.Getenv("JWT_REFRESH_EXPIRE"); expire != "" {
 		refreshExpire = helper.ParseInt(expire)
 	}
 
-	return &AuthService{jwt: jwt, repo: repo, accessExpire: accessExpire, refreshExpire: refreshExpire}
+	authCache := NewAuthCache(cacheService)
+	return &AuthService{
+		repo:          repo,
+		authCache:     authCache,
+		jwtService:    jwtService,
+		accessExpire:  accessExpire,
+		refreshExpire: refreshExpire,
+	}
 }
 
 func (service *AuthService) Register(param *dtos.CreateUserDto) (*LoginResponse, error) {
@@ -80,7 +96,7 @@ func (service *AuthService) Login(param *dtos.LoginDto) (*LoginResponse, error) 
 }
 
 func (service *AuthService) RefreshToken(token string) (*LoginResponse, error) {
-	if data, err := service.jwt.JwtVerify(token); err != nil {
+	if data, err := service.jwtService.JwtVerify(token); err != nil {
 		return nil, err
 	} else {
 		return service.getToken(data.UserId)
@@ -98,9 +114,25 @@ func (service *AuthService) getToken(id int) (*LoginResponse, error) {
 	refClaim := NewUserCustomClaims(id, service.refreshExpire)
 
 	res := &LoginResponse{
-		AccessToken:  service.jwt.JwtSign(accClaim),
-		RefreshToken: service.jwt.JwtSign(refClaim),
+		AccessToken:  service.jwtService.JwtSign(accClaim),
+		RefreshToken: service.jwtService.JwtSign(refClaim),
 	}
 
 	return res, nil
+}
+
+func (service *AuthService) GetProfile(id int) (*models.User, error) {
+	user, err := service.authCache.GetCacheUser(id)
+
+	if errors.Is(err, redis.Nil) {
+		user, err = service.repo.GetUserById(id)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if err = service.authCache.SetCacheUser(user); err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
