@@ -33,6 +33,7 @@ func (e *AppError) RootErr() error {
 	return e.Err
 }
 
+// error wrapper
 func NewAppError(statusCode int, message string, err error) *AppError {
 	return &AppError{
 		StatusCode: statusCode,
