@@ -42,7 +42,7 @@ func Default(db *gorm.DB) *Router {
 
 	// controllers
 	appController := app.NewController(appService)
-	authController := auth.NewController(authService)
+	authController := auth.NewController(authService, jwtService)
 	taskController := task.NewController(taskService, jwtService)
 
 	return &Router{

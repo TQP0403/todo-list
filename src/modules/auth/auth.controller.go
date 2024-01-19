@@ -10,21 +10,21 @@ import (
 )
 
 type AuthController struct {
-	service IAuthService
+	service    IAuthService
+	jwtService jwt.IJwtService
 }
 
-func NewController(service *AuthService) *AuthController {
-	return &AuthController{service: service}
+func NewController(service *AuthService, jwtService *jwt.JwtService) *AuthController {
+	return &AuthController{service: service, jwtService: jwtService}
 }
 
 func (ctrl *AuthController) Register(router *gin.Engine) {
-	jwtService := ctrl.service.GetJwtService()
 	group := router.Group("/api/auth")
 	{
 		group.POST("/register", ctrl.handleRegister)
 		group.POST("/login", ctrl.handleLogin)
 		group.POST("/refresh-token", ctrl.handleRefreshToken)
-		group.GET("/profile", jwt.JwtMiddleware(jwtService), ctrl.handleGetProfile)
+		group.GET("/profile", jwt.JwtMiddleware(ctrl.jwtService), ctrl.handleGetProfile)
 	}
 }
 
