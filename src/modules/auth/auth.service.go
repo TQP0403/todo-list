@@ -24,15 +24,10 @@ type AuthService struct {
 }
 
 type IAuthService interface {
-	GetJwtService() jwt.IJwtService
 	Register(param *dtos.RegisterDto) (*LoginResponse, error)
 	Login(param *dtos.LoginDto) (*LoginResponse, error)
 	RefreshToken(token string) (*LoginResponse, error)
 	GetProfile(id int) (*models.User, error)
-}
-
-func (service *AuthService) GetJwtService() jwt.IJwtService {
-	return service.jwtService
 }
 
 func NewService(repo *AuthRepo, jwtService *jwt.JwtService, cacheService *cache.CacheService) *AuthService {
