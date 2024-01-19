@@ -1,7 +1,7 @@
 package models
 
 import (
-	"TQP0403/todo-list/src/config"
+	"TQP0403/todo-list/src/helper"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -13,14 +13,14 @@ type User struct {
 	ID          int            `json:"id" gorm:"primarykey"`
 	DisplayName string         `json:"displayName" gorm:"column:display_name;size:255"`
 	Username    string         `json:"username" gorm:"column:username;size:255;index:unique"`
-	Password    string         `json:"password" gorm:"column:password"`
+	Password    string         `json:"-" gorm:"column:password"`
 	CreatedAt   *time.Time     `json:"createdAt,omitempty" gorm:"column:created_at"`
 	UpdatedAt   *time.Time     `json:"updatedAt,omitempty" gorm:"column:updated_at"`
 	DeletedAt   gorm.DeletedAt `json:"deletedAt,omitempty" gorm:"column:deleted_at;index"`
 }
 
 func (User) TableName() string {
-	return fmt.Sprintf("%s.%s", config.Getenv("DB_SCHEMA", "public"), "users")
+	return fmt.Sprintf("%s.%s", helper.GetDefaultEnv("DB_SCHEMA", "public"), "users")
 }
 
 func (user User) String() string {
@@ -32,7 +32,15 @@ func (user User) String() string {
 	)
 }
 
-func (user User) Marshal() (string, error) {
+func (user *User) MarshalBinary() (data []byte, err error) {
+	return json.Marshal(user)
+}
+
+func (user *User) UnmarshalBinary(data []byte) error {
+	return json.Unmarshal(data, user)
+}
+
+func (user *User) Marshal() (string, error) {
 	// struct to string
 	if data, err := json.Marshal(user); err != nil {
 		return "", err

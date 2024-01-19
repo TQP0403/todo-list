@@ -2,7 +2,6 @@ package config
 
 import (
 	"log"
-	"os"
 
 	"github.com/joho/godotenv"
 )
@@ -12,12 +11,4 @@ func Init() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-}
-
-func Getenv(key string, defaultVal string) string {
-	value := os.Getenv(key)
-	if len(value) == 0 {
-		return defaultVal
-	}
-	return value
 }

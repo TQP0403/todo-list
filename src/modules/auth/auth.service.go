@@ -5,8 +5,9 @@ import (
 	"TQP0403/todo-list/src/helper"
 	"TQP0403/todo-list/src/models"
 	"TQP0403/todo-list/src/modules/auth/dtos"
+	"TQP0403/todo-list/src/modules/cache"
+	"TQP0403/todo-list/src/modules/jwt"
 	"errors"
-	"os"
 )
 
 type LoginResponse struct {
@@ -17,31 +18,38 @@ type LoginResponse struct {
 type AuthService struct {
 	accessExpire  int
 	refreshExpire int
+	jwtService    jwt.IJwtService
 	repo          IAuthRepo
-	jwt           IJwtService
+	cache         IAuthCache
 }
 
 type IAuthService interface {
-	Register(param *dtos.CreateUserDto) (*LoginResponse, error)
+	GetJwtService() jwt.IJwtService
+	Register(param *dtos.RegisterDto) (*LoginResponse, error)
 	Login(param *dtos.LoginDto) (*LoginResponse, error)
 	RefreshToken(token string) (*LoginResponse, error)
+	GetProfile(id int) (*models.User, error)
 }
 
-func NewService(repo *AuthRepo, jwt *JwtService) *AuthService {
-	accessExpire := 86400
-	if expire := os.Getenv("JWT_ACCESS_EXPIRE"); expire != "" {
-		accessExpire = helper.ParseInt(expire)
-	}
-
-	refreshExpire := 86400 * 30
-	if expire := os.Getenv("JWT_REFRESH_EXPIRE"); expire != "" {
-		refreshExpire = helper.ParseInt(expire)
-	}
-
-	return &AuthService{jwt: jwt, repo: repo, accessExpire: accessExpire, refreshExpire: refreshExpire}
+func (service *AuthService) GetJwtService() jwt.IJwtService {
+	return service.jwtService
 }
 
-func (service *AuthService) Register(param *dtos.CreateUserDto) (*LoginResponse, error) {
+func NewService(repo *AuthRepo, jwtService *jwt.JwtService, cacheService *cache.CacheService) *AuthService {
+	accessExpire := helper.ParseInt(helper.GetDefaultEnv("JWT_ACCESS_EXPIRE", "86400"))
+	refreshExpire := helper.ParseInt(helper.GetDefaultEnv("JWT_REFRESH_EXPIRE", "2592000"))
+	cache := NewAuthCache(cacheService)
+
+	return &AuthService{
+		repo:          repo,
+		cache:         cache,
+		jwtService:    jwtService,
+		accessExpire:  accessExpire,
+		refreshExpire: refreshExpire,
+	}
+}
+
+func (service *AuthService) Register(param *dtos.RegisterDto) (*LoginResponse, error) {
 	var user *models.User
 	var err error
 
@@ -80,7 +88,7 @@ func (service *AuthService) Login(param *dtos.LoginDto) (*LoginResponse, error) 
 }
 
 func (service *AuthService) RefreshToken(token string) (*LoginResponse, error) {
-	if data, err := service.jwt.JwtVerify(token); err != nil {
+	if data, err := service.jwtService.JwtVerify(token); err != nil {
 		return nil, err
 	} else {
 		return service.getToken(data.UserId)
@@ -89,18 +97,34 @@ func (service *AuthService) RefreshToken(token string) (*LoginResponse, error) {
 
 func (service *AuthService) getToken(id int) (*LoginResponse, error) {
 	_, err := service.repo.GetUserById(id)
-
 	if err != nil {
 		return nil, err
 	}
 
-	accClaim := NewUserCustomClaims(id, service.accessExpire)
-	refClaim := NewUserCustomClaims(id, service.refreshExpire)
-
+	accClaim := jwt.NewUserCustomClaims(id, service.accessExpire)
+	refClaim := jwt.NewUserCustomClaims(id, service.refreshExpire)
 	res := &LoginResponse{
-		AccessToken:  service.jwt.JwtSign(accClaim),
-		RefreshToken: service.jwt.JwtSign(refClaim),
+		AccessToken:  service.jwtService.JwtSign(accClaim),
+		RefreshToken: service.jwtService.JwtSign(refClaim),
 	}
 
 	return res, nil
+}
+
+func (service *AuthService) GetProfile(id int) (*models.User, error) {
+	// get cache
+	user, err := service.cache.GetCacheUser(id)
+
+	// if cache empty
+	if err != nil {
+		// get db
+		user, err = service.repo.GetUserById(id)
+		if err != nil {
+			return nil, err
+		}
+		// set cache
+		service.cache.SetCacheUser(user)
+	}
+
+	return user, nil
 }

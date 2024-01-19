@@ -1,9 +1,8 @@
-package middlewares
+package jwt
 
 import (
 	"TQP0403/todo-list/src/common"
 	"TQP0403/todo-list/src/helper"
-	"TQP0403/todo-list/src/modules/auth"
 	"errors"
 	"fmt"
 	"strings"
@@ -11,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func JwtAuthMiddleware(jwtService auth.IJwtService) gin.HandlerFunc {
+func JwtMiddleware(jwtService IJwtService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		req := ctx.Request
 

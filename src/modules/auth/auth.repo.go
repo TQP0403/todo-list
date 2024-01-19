@@ -12,7 +12,7 @@ type IAuthRepo interface {
 	IsExistUserName(username string) (bool, error)
 	GetUserByUserName(username string) (*models.User, error)
 	GetUserById(id int) (*models.User, error)
-	CreateUser(param *dtos.CreateUserDto) (*models.User, error)
+	CreateUser(param *dtos.RegisterDto) (*models.User, error)
 }
 
 type AuthRepo struct {
@@ -53,7 +53,7 @@ func (repo *AuthRepo) GetUserById(id int) (*models.User, error) {
 	return user, nil
 }
 
-func (repo *AuthRepo) CreateUser(param *dtos.CreateUserDto) (*models.User, error) {
+func (repo *AuthRepo) CreateUser(param *dtos.RegisterDto) (*models.User, error) {
 	user := &models.User{
 		DisplayName: param.DisplayName,
 		Username:    param.Username,

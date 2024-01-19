@@ -3,6 +3,7 @@ package auth
 import (
 	"TQP0403/todo-list/src/common"
 	"TQP0403/todo-list/src/modules/auth/dtos"
+	"TQP0403/todo-list/src/modules/jwt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,11 +18,13 @@ func NewController(service *AuthService) *AuthController {
 }
 
 func (ctrl *AuthController) Register(router *gin.Engine) {
+	jwtService := ctrl.service.GetJwtService()
 	group := router.Group("/api/auth")
 	{
 		group.POST("/register", ctrl.handleRegister)
 		group.POST("/login", ctrl.handleLogin)
 		group.POST("/refresh-token", ctrl.handleRefreshToken)
+		group.GET("/profile", jwt.JwtMiddleware(jwtService), ctrl.handleGetProfile)
 	}
 }
 
@@ -69,7 +72,7 @@ func (ctrl *AuthController) handleLogin(ctx *gin.Context) {
 
 func (ctrl *AuthController) handleRegister(ctx *gin.Context) {
 	var res *LoginResponse
-	var reqData dtos.CreateUserDto
+	var reqData dtos.RegisterDto
 	var err error
 
 	if err = ctx.ShouldBind(&reqData); err != nil {
@@ -85,4 +88,15 @@ func (ctrl *AuthController) handleRegister(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, common.NewSuccessResponse(res))
+}
+
+func (ctrl *AuthController) handleGetProfile(ctx *gin.Context) {
+	userId := jwt.GetUserId(ctx)
+
+	if res, err := ctrl.service.GetProfile(userId); err != nil {
+		cusErr := common.NewInternalServerError(err)
+		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(*cusErr))
+	} else {
+		ctx.JSON(http.StatusOK, common.NewSuccessResponse(res))
+	}
 }

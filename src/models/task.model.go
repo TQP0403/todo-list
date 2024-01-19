@@ -1,7 +1,7 @@
 package models
 
 import (
-	"TQP0403/todo-list/src/config"
+	"TQP0403/todo-list/src/helper"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -30,7 +30,7 @@ type Task struct {
 }
 
 func (Task) TableName() string {
-	return fmt.Sprintf("%s.%s", config.Getenv("DB_SCHEMA", "public"), "tasks")
+	return fmt.Sprintf("%s.%s", helper.GetDefaultEnv("DB_SCHEMA", "public"), "tasks")
 }
 
 func (task Task) String() string {
@@ -44,7 +44,15 @@ func (task Task) String() string {
 	)
 }
 
-func (task Task) Marshal() (string, error) {
+func (task *Task) MarshalBinary() (data []byte, err error) {
+	return json.Marshal(task)
+}
+
+func (task *Task) UnmarshalBinary(data []byte) error {
+	return json.Unmarshal(data, task)
+}
+
+func (task *Task) Marshal() (string, error) {
 	// struct to string
 	if data, err := json.Marshal(task); err != nil {
 		return "", err

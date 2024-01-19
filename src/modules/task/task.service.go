@@ -3,6 +3,7 @@ package task
 import (
 	"TQP0403/todo-list/src/common"
 	"TQP0403/todo-list/src/models"
+	"TQP0403/todo-list/src/modules/cache"
 	"TQP0403/todo-list/src/modules/task/dtos"
 	"errors"
 )
@@ -16,11 +17,12 @@ type ITaskService interface {
 }
 
 type TaskService struct {
-	repo ITaskRepo
+	repo  ITaskRepo
+	cache ITaskCache
 }
 
-func NewService(repo ITaskRepo) *TaskService {
-	return &TaskService{repo: repo}
+func NewService(repo *TaskRepo, cacheService *cache.CacheService) *TaskService {
+	return &TaskService{repo: repo, cache: NewTaskCache(cacheService)}
 }
 
 func (service *TaskService) CreateTask(param *dtos.CreateTaskDto) (*models.Task, error) {
@@ -32,12 +34,21 @@ func (service *TaskService) GetListTask(userId int, pagination *common.Paginatio
 }
 
 func (service *TaskService) GetTaskById(userId, id int) (*models.Task, error) {
-	task, err := service.repo.GetTaskById(id)
+	// get cache
+	task, err := service.cache.GetCacheTask(id)
 
+	// if cache empty
 	if err != nil {
-		return nil, err
+		// get db
+		task, err = service.repo.GetTaskById(id)
+		if err != nil {
+			return nil, err
+		}
+		// set cache
+		service.cache.SetCacheTask(task)
 	}
 
+	// check owner
 	if task.UserID != userId {
 		return nil, errors.New("not owner")
 	}
@@ -52,6 +63,9 @@ func (service *TaskService) UpdateTask(userId int, param *dtos.UpdateTaskDto) (*
 		return nil, err
 	}
 
+	// delete cache
+	service.cache.DelCacheTask(param.ID)
+
 	return service.repo.UpdateTask(param)
 }
 
@@ -61,6 +75,9 @@ func (service *TaskService) DeleteTask(userId, id int) error {
 	if err != nil {
 		return err
 	}
+
+	// delete cache
+	service.cache.DelCacheTask(id)
 
 	return service.repo.DeleteTask(id)
 }
