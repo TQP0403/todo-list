@@ -17,14 +17,19 @@ type AppError struct {
 	StatusCode int    `json:"statusCode"`
 	Message    string `json:"message"`
 	Err        error  `json:"-"`
-	LogError   string `json:"log"`
 }
 
+// implement interface error
 func (e *AppError) Error() string {
 	return e.RootErr().Error()
 }
 
 func (e *AppError) RootErr() error {
+	// parse AppError from interface error
+	if val, ok := e.Err.(*AppError); ok {
+		return val.RootErr()
+	}
+
 	return e.Err
 }
 
@@ -33,11 +38,14 @@ func NewAppError(statusCode int, message string, err error) *AppError {
 		StatusCode: statusCode,
 		Message:    message,
 		Err:        err,
-		LogError:   err.Error(),
 	}
 }
 
 func newCommonError(statusCode int, err error) *AppError {
+	if val, ok := err.(*AppError); ok {
+		return val
+	}
+
 	return NewAppError(statusCode, CommonErr[statusCode], err)
 }
 

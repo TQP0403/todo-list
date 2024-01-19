@@ -12,7 +12,7 @@ type ITaskService interface {
 	CreateTask(param *dtos.CreateTaskDto) (*models.Task, error)
 	GetListTask(userId int, pagination *common.Pagination) ([]models.Task, error)
 	GetTaskById(userId, id int) (*models.Task, error)
-	UpdateTask(userId int, param *dtos.UpdateTaskDto) (*models.Task, error)
+	UpdateTask(userId int, param *dtos.UpdateTaskDto) error
 	DeleteTask(userId, id int) error
 }
 
@@ -26,6 +26,10 @@ func NewService(repo *TaskRepo, cacheService *cache.CacheService) *TaskService {
 }
 
 func (service *TaskService) CreateTask(param *dtos.CreateTaskDto) (*models.Task, error) {
+	if len(param.Title) == 0 {
+		return nil, common.NewBadRequestError(errors.New("title is empty"))
+	}
+
 	return service.repo.CreateTask(param)
 }
 
@@ -50,17 +54,21 @@ func (service *TaskService) GetTaskById(userId, id int) (*models.Task, error) {
 
 	// check owner
 	if task.UserID != userId {
-		return nil, errors.New("not owner")
+		return nil, common.NewBadRequestError(errors.New("not owner"))
 	}
 
 	return task, nil
 }
 
-func (service *TaskService) UpdateTask(userId int, param *dtos.UpdateTaskDto) (*models.Task, error) {
+func (service *TaskService) UpdateTask(userId int, param *dtos.UpdateTaskDto) error {
 	_, err := service.GetTaskById(userId, param.ID)
 
 	if err != nil {
-		return nil, err
+		return err
+	}
+
+	if len(param.Title) == 0 {
+		return common.NewBadRequestError(errors.New("title is empty"))
 	}
 
 	// delete cache

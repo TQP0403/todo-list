@@ -36,14 +36,14 @@ func (ctrl *TaskController) handleCreateTask(ctx *gin.Context) {
 	var reqData dtos.CreateTaskDto
 	if err := ctx.ShouldBind(&reqData); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(*cusErr))
+		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
 		return
 	}
 	reqData.UserID = userId
 
 	if _, err := ctrl.service.CreateTask(&reqData); err != nil {
 		cusErr := common.NewInternalServerError(err)
-		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(*cusErr))
+		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
 		return
 	}
 
@@ -58,14 +58,16 @@ func (ctrl *TaskController) handleGetListTask(ctx *gin.Context) {
 
 	if err != nil {
 		cusErr := common.NewInternalServerError(err)
-		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(*cusErr))
+		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, common.NewListResponse(common.PaginationResponse{
+	res := &common.PaginationResponse{
 		Metadata: pQuery,
 		Rows:     tasks,
-	}))
+	}
+
+	ctx.JSON(http.StatusOK, common.NewListResponse(res))
 }
 
 func (ctrl *TaskController) handleGetTaskById(ctx *gin.Context) {
@@ -75,7 +77,7 @@ func (ctrl *TaskController) handleGetTaskById(ctx *gin.Context) {
 
 	if task, err := ctrl.service.GetTaskById(userId, id); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(*cusErr))
+		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
 	} else {
 		ctx.JSON(http.StatusOK, common.NewSuccessResponse(task))
 	}
@@ -88,16 +90,16 @@ func (ctrl *TaskController) handleUpdateTask(ctx *gin.Context) {
 
 	if err := ctx.ShouldBind(&reqData); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(*cusErr))
+		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
 		return
 	}
 
 	reqData.ID = helper.ParseInt(ctx.Param("id"))
-	if result, err := ctrl.service.UpdateTask(userId, &reqData); err != nil {
+	if err := ctrl.service.UpdateTask(userId, &reqData); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(*cusErr))
+		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
 	} else {
-		ctx.JSON(http.StatusOK, common.NewSuccessResponse(result))
+		ctx.JSON(http.StatusOK, common.NewSimpleResponse())
 	}
 }
 
@@ -107,7 +109,7 @@ func (ctrl *TaskController) handleDeleteTask(ctx *gin.Context) {
 
 	if err := ctrl.service.DeleteTask(userId, id); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(*cusErr))
+		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
 		return
 	}
 

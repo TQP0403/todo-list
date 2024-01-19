@@ -8,11 +8,13 @@ import (
 	"TQP0403/todo-list/src/modules/cache"
 	"TQP0403/todo-list/src/modules/jwt"
 	"errors"
+
+	"gorm.io/gorm"
 )
 
 type LoginResponse struct {
-	AccessToken  string
-	RefreshToken string
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
 }
 
 type AuthService struct {
@@ -28,6 +30,8 @@ type IAuthService interface {
 	Login(param *dtos.LoginDto) (*LoginResponse, error)
 	RefreshToken(token string) (*LoginResponse, error)
 	GetProfile(id int) (*models.User, error)
+	UpdateProfile(id int, param *dtos.UpdateProfileDto) error
+	ChangePassword(id int, param *dtos.ChangePasswordDto) error
 }
 
 func NewService(repo *AuthRepo, jwtService *jwt.JwtService, cacheService *cache.CacheService) *AuthService {
@@ -47,6 +51,16 @@ func NewService(repo *AuthRepo, jwtService *jwt.JwtService, cacheService *cache.
 func (service *AuthService) Register(param *dtos.RegisterDto) (*LoginResponse, error) {
 	var user *models.User
 	var err error
+
+	if len(param.DisplayName) == 0 {
+		return nil, common.NewBadRequestError(errors.New("displayName is empty"))
+	}
+	if len(param.Username) == 0 {
+		return nil, common.NewBadRequestError(errors.New("username is empty"))
+	}
+	if len(param.Password) == 0 {
+		return nil, common.NewBadRequestError(errors.New("password is empty"))
+	}
 
 	if ok, err := service.repo.IsExistUserName(param.Username); err != nil {
 		return nil, err
@@ -71,12 +85,15 @@ func (service *AuthService) Login(param *dtos.LoginDto) (*LoginResponse, error) 
 	var user *models.User
 
 	if user, err = service.repo.GetUserByUserName(param.Username); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, common.NewUnauthorizedError(errors.New("username or password is wrong"))
+		}
 		return nil, err
 	}
 
 	// bcrypt compare password
 	if err := helper.BcryptCompare(user.Password, param.Password); err != nil {
-		return nil, err
+		return nil, common.NewUnauthorizedError(errors.New("username or password is wrong"))
 	}
 
 	return service.getToken(user.ID)
@@ -122,4 +139,36 @@ func (service *AuthService) GetProfile(id int) (*models.User, error) {
 	}
 
 	return user, nil
+}
+
+func (service *AuthService) UpdateProfile(id int, param *dtos.UpdateProfileDto) error {
+	if param.DisplayName == "" {
+		return common.NewBadRequestError(errors.New("display_name is empty"))
+	}
+
+	return service.repo.UpdateUser(id, param)
+}
+
+func (service *AuthService) ChangePassword(id int, param *dtos.ChangePasswordDto) error {
+	// check input params
+	if len(param.OldPassword) == 0 {
+		return common.NewBadRequestError(errors.New("old password is empty"))
+	}
+	if len(param.NewPassword) == 0 {
+		return common.NewBadRequestError(errors.New("new password is empty"))
+	}
+
+	// get user by id & check old password
+	if user, err := service.GetProfile(id); err != nil {
+		return err
+	} else if err = helper.BcryptCompare(user.Password, param.OldPassword); err != nil {
+		return common.NewUnauthorizedError(errors.New("wrong password"))
+	}
+
+	// hash new password & save password
+	if newHashedPassword, err := helper.BcryptHash(param.NewPassword); err != nil {
+		return err
+	} else {
+		return service.repo.ChangePasswordUser(id, newHashedPassword)
+	}
 }

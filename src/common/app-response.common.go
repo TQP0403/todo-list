@@ -20,10 +20,14 @@ func NewSuccessResponse(data interface{}) SuccessResponse {
 	return SuccessResponse{Message: "ok", Data: data}
 }
 
-func NewListResponse(data PaginationResponse) SuccessResponse {
+func NewListResponse(data *PaginationResponse) SuccessResponse {
 	return SuccessResponse{Message: "ok", Data: data.Rows, Metadata: &data.Metadata}
 }
 
-func NewErrorResponse(err AppError) ErrorResponse {
-	return ErrorResponse{Message: "error", Error: err.Message, Log: err.LogError}
+func NewErrorResponse(err error) ErrorResponse {
+	// check type
+	if val, ok := err.(*AppError); ok {
+		return ErrorResponse{Message: "error", Error: val.Message, Log: val.Error()}
+	}
+	return ErrorResponse{Message: "error", Error: err.Error(), Log: err.Error()}
 }
