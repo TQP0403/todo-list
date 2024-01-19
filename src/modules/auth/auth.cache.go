@@ -31,8 +31,8 @@ func (service *AuthCache) GetCacheUser(id int) (*models.User, error) {
 }
 
 func (service *AuthCache) SetCacheUser(user *models.User) error {
-	key := fmt.Sprintf("user:%d", user.ID)
 	ttl := time.Minute * 5
+	key := fmt.Sprintf("user:%d", user.ID)
 	if err := service.cacheService.Set(key, user, ttl); err != nil {
 		return err
 	}

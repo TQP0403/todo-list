@@ -8,7 +8,6 @@ import (
 	"TQP0403/todo-list/src/modules/cache"
 	"TQP0403/todo-list/src/modules/jwt"
 	"errors"
-	"fmt"
 )
 
 type LoginResponse struct {
@@ -19,14 +18,14 @@ type LoginResponse struct {
 type AuthService struct {
 	accessExpire  int
 	refreshExpire int
-	repo          IAuthRepo
 	jwtService    jwt.IJwtService
-	authCache     IAuthCache
+	repo          IAuthRepo
+	cache         IAuthCache
 }
 
 type IAuthService interface {
 	GetJwtService() jwt.IJwtService
-	Register(param *dtos.CreateUserDto) (*LoginResponse, error)
+	Register(param *dtos.RegisterDto) (*LoginResponse, error)
 	Login(param *dtos.LoginDto) (*LoginResponse, error)
 	RefreshToken(token string) (*LoginResponse, error)
 	GetProfile(id int) (*models.User, error)
@@ -38,19 +37,19 @@ func (service *AuthService) GetJwtService() jwt.IJwtService {
 
 func NewService(repo *AuthRepo, jwtService *jwt.JwtService, cacheService *cache.CacheService) *AuthService {
 	accessExpire := helper.ParseInt(helper.GetDefaultEnv("JWT_ACCESS_EXPIRE", "86400"))
-	refreshExpire := helper.ParseInt(helper.GetDefaultEnv("JWT_ACCESS_EXPIRE", "2592000"))
+	refreshExpire := helper.ParseInt(helper.GetDefaultEnv("JWT_REFRESH_EXPIRE", "2592000"))
+	cache := NewAuthCache(cacheService)
 
-	authCache := NewAuthCache(cacheService)
 	return &AuthService{
 		repo:          repo,
-		authCache:     authCache,
+		cache:         cache,
 		jwtService:    jwtService,
 		accessExpire:  accessExpire,
 		refreshExpire: refreshExpire,
 	}
 }
 
-func (service *AuthService) Register(param *dtos.CreateUserDto) (*LoginResponse, error) {
+func (service *AuthService) Register(param *dtos.RegisterDto) (*LoginResponse, error) {
 	var user *models.User
 	var err error
 
@@ -113,19 +112,18 @@ func (service *AuthService) getToken(id int) (*LoginResponse, error) {
 }
 
 func (service *AuthService) GetProfile(id int) (*models.User, error) {
-	user, err := service.authCache.GetCacheUser(id)
+	// get cache
+	user, err := service.cache.GetCacheUser(id)
 
+	// if cache empty
 	if err != nil {
+		// get db
 		user, err = service.repo.GetUserById(id)
-	} else {
-		return user, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	if err = service.authCache.SetCacheUser(user); err != nil {
-		// return nil, err
-		fmt.Println(err)
+		if err != nil {
+			return nil, err
+		}
+		// set cache
+		service.cache.SetCacheUser(user)
 	}
 
 	return user, nil

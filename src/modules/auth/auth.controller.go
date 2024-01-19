@@ -72,7 +72,7 @@ func (ctrl *AuthController) handleLogin(ctx *gin.Context) {
 
 func (ctrl *AuthController) handleRegister(ctx *gin.Context) {
 	var res *LoginResponse
-	var reqData dtos.CreateUserDto
+	var reqData dtos.RegisterDto
 	var err error
 
 	if err = ctx.ShouldBind(&reqData); err != nil {

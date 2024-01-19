@@ -5,6 +5,7 @@ import (
 	"TQP0403/todo-list/src/models"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"gorm.io/driver/postgres"
@@ -25,7 +26,7 @@ func Init() {
 	)
 
 	var newLogger logger.Interface
-	if dbLog := helper.GetDefaultEnv("DB_LOG", "false"); dbLog == "true" {
+	if os.Getenv("DB_LOG") == "true" {
 		newLogger = logger.Default.LogMode(logger.Info)
 	}
 

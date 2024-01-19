@@ -4,16 +4,13 @@ import (
 	"TQP0403/todo-list/src/helper"
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
 type ICacheService interface {
-	HSet(key string, val interface{}, ttl time.Duration) error
-	HGet(key string, val interface{}) error
-	HDel(key string) error
-
 	Set(key string, val interface{}, ttl time.Duration) error
 	Get(key string, val interface{}) error
 	Del(key string) error
@@ -27,7 +24,7 @@ type CacheService struct {
 
 func NewDefaultCacheService() *CacheService {
 	redisStr := "redis"
-	if helper.GetDefaultEnv("REDIS_TLS", "false") == "true" {
+	if os.Getenv("REDIS_TLS") == "true" {
 		redisStr = "rediss"
 	}
 
@@ -51,26 +48,8 @@ func NewDefaultCacheService() *CacheService {
 	}
 }
 
-func (s *CacheService) HSet(key string, val interface{}, ttl time.Duration) error {
-	if ttl == 0 {
-		ttl = s.ttlDefault
-	}
-	return s.client.HSet(s.ctx, key, val, ttl).Err()
-}
-
-func (s *CacheService) HGet(key string, val interface{}) error {
-	return s.client.HGetAll(s.ctx, key).Scan(&val)
-}
-
-func (s *CacheService) HDel(key string) error {
-	return s.client.HDel(s.ctx, key).Err()
-}
-
 func (s *CacheService) Set(key string, val interface{}, ttl time.Duration) error {
-	if ttl == 0 {
-		ttl = s.ttlDefault
-	}
-	return s.client.Set(s.ctx, key, val, ttl).Err()
+	return s.client.Set(s.ctx, key, val, helper.GetDefaultNumber(ttl, s.ttlDefault)).Err()
 }
 
 func (s *CacheService) Get(key string, val interface{}) error {

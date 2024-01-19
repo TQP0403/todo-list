@@ -38,7 +38,7 @@ func Default(db *gorm.DB) *Router {
 	appService := app.NewService()
 	jwtService := jwt.NewJwtService([]byte(os.Getenv("JWT_SECRET")))
 	authService := auth.NewService(authRepo, jwtService, cacheService)
-	taskService := task.NewService(taskRepo)
+	taskService := task.NewService(taskRepo, cacheService)
 
 	// controllers
 	appController := app.NewController(appService)
