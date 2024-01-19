@@ -13,6 +13,7 @@ type IAuthRepo interface {
 	GetUserByUserName(username string) (*models.User, error)
 	GetUserById(id int) (*models.User, error)
 	CreateUser(param *dtos.RegisterDto) (*models.User, error)
+	UpdateUser(id int, param *dtos.UpdateProfile) error
 }
 
 type AuthRepo struct {
@@ -36,7 +37,12 @@ func (repo *AuthRepo) IsExistUserName(username string) (bool, error) {
 func (repo *AuthRepo) GetUserByUserName(username string) (*models.User, error) {
 	user := &models.User{}
 
-	if err := repo.db.Model(&models.User{}).Where("username = ?", username).First(&user).Error; err != nil {
+	err := repo.db.Model(&models.User{}).
+		Where("username = ?", username).
+		First(user).
+		Error
+
+	if err != nil {
 		return nil, err
 	}
 
@@ -46,7 +52,11 @@ func (repo *AuthRepo) GetUserByUserName(username string) (*models.User, error) {
 func (repo *AuthRepo) GetUserById(id int) (*models.User, error) {
 	user := &models.User{}
 
-	if err := repo.db.Model(&models.User{}).Where("id = ?", id).First(&user).Error; err != nil {
+	err := repo.db.Model(&models.User{}).
+		Where("id = ?", id).
+		First(user).
+		Error
+	if err != nil {
 		return nil, err
 	}
 
@@ -60,9 +70,17 @@ func (repo *AuthRepo) CreateUser(param *dtos.RegisterDto) (*models.User, error) 
 		Password:    param.Password,
 	}
 
-	if err := repo.db.Model(&models.User{}).Create(&user).Error; err != nil {
+	if err := repo.db.Model(&models.User{}).Create(user).Error; err != nil {
 		return nil, err
 	}
 
 	return user, nil
+}
+
+func (repo *AuthRepo) UpdateUser(id int, param *dtos.UpdateProfile) error {
+	err := repo.db.Model(&models.User{}).Where("id = ?", id).Updates(param).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }
