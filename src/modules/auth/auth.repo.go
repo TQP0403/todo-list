@@ -13,7 +13,8 @@ type IAuthRepo interface {
 	GetUserByUserName(username string) (*models.User, error)
 	GetUserById(id int) (*models.User, error)
 	CreateUser(param *dtos.RegisterDto) (*models.User, error)
-	UpdateUser(id int, param *dtos.UpdateProfile) error
+	UpdateUser(id int, param *dtos.UpdateProfileDto) error
+	ChangePasswordUser(id int, newPassword string) error
 }
 
 type AuthRepo struct {
@@ -77,8 +78,16 @@ func (repo *AuthRepo) CreateUser(param *dtos.RegisterDto) (*models.User, error) 
 	return user, nil
 }
 
-func (repo *AuthRepo) UpdateUser(id int, param *dtos.UpdateProfile) error {
+func (repo *AuthRepo) UpdateUser(id int, param *dtos.UpdateProfileDto) error {
 	err := repo.db.Model(&models.User{}).Where("id = ?", id).Updates(param).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *AuthRepo) ChangePasswordUser(id int, newPassword string) error {
+	err := repo.db.Model(&models.User{}).Where("id = ?", id).Update("password", newPassword).Error
 	if err != nil {
 		return err
 	}

@@ -26,6 +26,7 @@ func (ctrl *AuthController) Register(router *gin.Engine) {
 		group.POST("/refresh-token", ctrl.handleRefreshToken)
 		group.GET("/profile", jwt.JwtMiddleware(ctrl.jwtService), ctrl.handleGetProfile)
 		group.PUT("/profile", jwt.JwtMiddleware(ctrl.jwtService), ctrl.handleUpdateProfile)
+		group.PUT("/profile/password", jwt.JwtMiddleware(ctrl.jwtService), ctrl.handleChangePassword)
 	}
 }
 
@@ -93,7 +94,7 @@ func (ctrl *AuthController) handleGetProfile(ctx *gin.Context) {
 
 func (ctrl *AuthController) handleUpdateProfile(ctx *gin.Context) {
 	userId := jwt.GetUserId(ctx)
-	var p dtos.UpdateProfile
+	var p dtos.UpdateProfileDto
 
 	if err := ctx.ShouldBind(&p); err != nil {
 		cusErr := common.NewBadRequestError(err)
@@ -102,6 +103,24 @@ func (ctrl *AuthController) handleUpdateProfile(ctx *gin.Context) {
 	}
 
 	if err := ctrl.service.UpdateProfile(userId, &p); err != nil {
+		cusErr := common.NewInternalServerError(err)
+		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
+	} else {
+		ctx.JSON(http.StatusOK, common.NewSimpleResponse())
+	}
+}
+
+func (ctrl *AuthController) handleChangePassword(ctx *gin.Context) {
+	userId := jwt.GetUserId(ctx)
+	var p dtos.ChangePasswordDto
+
+	if err := ctx.ShouldBind(&p); err != nil {
+		cusErr := common.NewBadRequestError(err)
+		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
+		return
+	}
+
+	if err := ctrl.service.ChangePassword(userId, &p); err != nil {
 		cusErr := common.NewInternalServerError(err)
 		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
 	} else {

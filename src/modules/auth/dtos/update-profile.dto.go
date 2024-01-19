@@ -1,5 +1,5 @@
 package dtos
 
-type UpdateProfile struct {
+type UpdateProfileDto struct {
 	DisplayName string `json:"displayName"`
 }

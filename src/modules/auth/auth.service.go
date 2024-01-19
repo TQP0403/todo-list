@@ -30,7 +30,8 @@ type IAuthService interface {
 	Login(param *dtos.LoginDto) (*LoginResponse, error)
 	RefreshToken(token string) (*LoginResponse, error)
 	GetProfile(id int) (*models.User, error)
-	UpdateProfile(id int, param *dtos.UpdateProfile) error
+	UpdateProfile(id int, param *dtos.UpdateProfileDto) error
+	ChangePassword(id int, param *dtos.ChangePasswordDto) error
 }
 
 func NewService(repo *AuthRepo, jwtService *jwt.JwtService, cacheService *cache.CacheService) *AuthService {
@@ -140,10 +141,34 @@ func (service *AuthService) GetProfile(id int) (*models.User, error) {
 	return user, nil
 }
 
-func (service *AuthService) UpdateProfile(id int, param *dtos.UpdateProfile) error {
+func (service *AuthService) UpdateProfile(id int, param *dtos.UpdateProfileDto) error {
 	if param.DisplayName == "" {
 		return common.NewBadRequestError(errors.New("display_name is empty"))
 	}
 
 	return service.repo.UpdateUser(id, param)
+}
+
+func (service *AuthService) ChangePassword(id int, param *dtos.ChangePasswordDto) error {
+	// check input params
+	if len(param.OldPassword) == 0 {
+		return common.NewBadRequestError(errors.New("old password is empty"))
+	}
+	if len(param.NewPassword) == 0 {
+		return common.NewBadRequestError(errors.New("new password is empty"))
+	}
+
+	// get user by id & check old password
+	if user, err := service.GetProfile(id); err != nil {
+		return err
+	} else if err = helper.BcryptCompare(user.Password, param.OldPassword); err != nil {
+		return common.NewUnauthorizedError(errors.New("wrong password"))
+	}
+
+	// hash new password & save password
+	if newHashedPassword, err := helper.BcryptHash(param.NewPassword); err != nil {
+		return err
+	} else {
+		return service.repo.ChangePasswordUser(id, newHashedPassword)
+	}
 }
