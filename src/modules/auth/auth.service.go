@@ -2,7 +2,6 @@ package auth
 
 import (
 	"TQP0403/todo-list/src/common"
-	"TQP0403/todo-list/src/config"
 	"TQP0403/todo-list/src/helper"
 	"TQP0403/todo-list/src/models"
 	"TQP0403/todo-list/src/modules/auth/dtos"
@@ -38,8 +37,8 @@ func (service *AuthService) GetJwtService() jwt.IJwtService {
 }
 
 func NewService(repo *AuthRepo, jwtService *jwt.JwtService, cacheService *cache.CacheService) *AuthService {
-	accessExpire := helper.ParseInt(config.Getenv("JWT_ACCESS_EXPIRE", "86400"))
-	refreshExpire := helper.ParseInt(config.Getenv("JWT_ACCESS_EXPIRE", "2592000"))
+	accessExpire := helper.ParseInt(helper.GetDefaultEnv("JWT_ACCESS_EXPIRE", "86400"))
+	refreshExpire := helper.ParseInt(helper.GetDefaultEnv("JWT_ACCESS_EXPIRE", "2592000"))
 
 	authCache := NewAuthCache(cacheService)
 	return &AuthService{

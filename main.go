@@ -3,6 +3,7 @@ package main
 import (
 	"TQP0403/todo-list/src/config"
 	"TQP0403/todo-list/src/db"
+	"TQP0403/todo-list/src/helper"
 	"TQP0403/todo-list/src/middlewares"
 	"TQP0403/todo-list/src/server"
 	"fmt"
@@ -41,7 +42,7 @@ func main() {
 	router.Use(middlewares.CORSMiddleware())
 
 	db.Init()
-	if env := config.Getenv("ENV", "development"); env != "production" {
+	if env := helper.GetDefaultEnv("ENV", "development"); env != "production" {
 		db.Migrate()
 		router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
@@ -49,7 +50,7 @@ func main() {
 	s := server.Default(db.GetDB())
 	s.Register(router)
 
-	port := fmt.Sprintf(":%s", config.Getenv("PORT", "8080"))
+	port := fmt.Sprintf(":%s", helper.GetDefaultEnv("PORT", "8080"))
 	if err := router.Run(port); err != nil {
 		log.Fatalf("Go Gin run err: %s\n", err)
 	}

@@ -1,7 +1,6 @@
 package db
 
 import (
-	"TQP0403/todo-list/src/config"
 	"TQP0403/todo-list/src/helper"
 	"TQP0403/todo-list/src/models"
 	"fmt"
@@ -18,15 +17,15 @@ var db *gorm.DB
 
 func Init() {
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		config.Getenv("DB_HOST", "localhost"),
-		config.Getenv("DB_PORT", "5432"),
-		config.Getenv("DB_USER", "postgres"),
-		config.Getenv("DB_PASS", ""),
-		config.Getenv("DB_NAME", "postgres"),
+		helper.GetDefaultEnv("DB_HOST", "localhost"),
+		helper.GetDefaultEnv("DB_PORT", "5432"),
+		helper.GetDefaultEnv("DB_USER", "postgres"),
+		helper.GetDefaultEnv("DB_PASS", ""),
+		helper.GetDefaultEnv("DB_NAME", "postgres"),
 	)
 
 	var newLogger logger.Interface
-	if dbLog := config.Getenv("DB_LOG", "false"); dbLog == "true" {
+	if dbLog := helper.GetDefaultEnv("DB_LOG", "false"); dbLog == "true" {
 		newLogger = logger.Default.LogMode(logger.Info)
 	}
 
@@ -60,7 +59,7 @@ func Init() {
 	sqlDB.SetMaxIdleConns(10)
 
 	// SetMaxOpenConns sets the maximum number of open connections to the database.
-	maxConn := helper.ParseInt(config.Getenv("DB_CONNECTION_POOL", "0"))
+	maxConn := helper.ParseInt(helper.GetDefaultEnv("DB_CONNECTION_POOL", "0"))
 	if maxConn == 0 {
 		maxConn = 100
 	}

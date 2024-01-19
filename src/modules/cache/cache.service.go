@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"TQP0403/todo-list/src/config"
+	"TQP0403/todo-list/src/helper"
 	"context"
 	"fmt"
 	"time"
@@ -27,16 +27,16 @@ type CacheService struct {
 
 func NewDefaultCacheService() *CacheService {
 	redisStr := "redis"
-	if config.Getenv("REDIS_TLS", "false") == "true" {
+	if helper.GetDefaultEnv("REDIS_TLS", "false") == "true" {
 		redisStr = "rediss"
 	}
 
 	redisUrl := fmt.Sprintf("%s://%s:%s@%s:%s/0",
 		redisStr,
-		config.Getenv("REDIS_USER", ""),
-		config.Getenv("REDIS_PASS", ""),
-		config.Getenv("REDIS_HOST", "localhost"),
-		config.Getenv("REDIS_PORT", "6379"),
+		helper.GetDefaultEnv("REDIS_USER", ""),
+		helper.GetDefaultEnv("REDIS_PASS", ""),
+		helper.GetDefaultEnv("REDIS_HOST", "localhost"),
+		helper.GetDefaultEnv("REDIS_PORT", "6379"),
 	)
 	opt, err := redis.ParseURL(redisUrl)
 	if err != nil {
@@ -55,7 +55,6 @@ func (s *CacheService) HSet(key string, val interface{}, ttl time.Duration) erro
 	if ttl == 0 {
 		ttl = s.ttlDefault
 	}
-
 	return s.client.HSet(s.ctx, key, val, ttl).Err()
 }
 
@@ -71,7 +70,6 @@ func (s *CacheService) Set(key string, val interface{}, ttl time.Duration) error
 	if ttl == 0 {
 		ttl = s.ttlDefault
 	}
-
 	return s.client.Set(s.ctx, key, val, ttl).Err()
 }
 

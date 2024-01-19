@@ -1,7 +1,7 @@
 package models
 
 import (
-	"TQP0403/todo-list/src/config"
+	"TQP0403/todo-list/src/helper"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -20,7 +20,7 @@ type User struct {
 }
 
 func (User) TableName() string {
-	return fmt.Sprintf("%s.%s", config.Getenv("DB_SCHEMA", "public"), "users")
+	return fmt.Sprintf("%s.%s", helper.GetDefaultEnv("DB_SCHEMA", "public"), "users")
 }
 
 func (user User) String() string {

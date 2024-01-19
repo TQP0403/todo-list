@@ -1,7 +1,7 @@
 package models
 
 import (
-	"TQP0403/todo-list/src/config"
+	"TQP0403/todo-list/src/helper"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -30,7 +30,7 @@ type Task struct {
 }
 
 func (Task) TableName() string {
-	return fmt.Sprintf("%s.%s", config.Getenv("DB_SCHEMA", "public"), "tasks")
+	return fmt.Sprintf("%s.%s", helper.GetDefaultEnv("DB_SCHEMA", "public"), "tasks")
 }
 
 func (task Task) String() string {
