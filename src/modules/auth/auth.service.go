@@ -8,6 +8,7 @@ import (
 	"TQP0403/todo-list/src/modules/cache"
 	"TQP0403/todo-list/src/modules/jwt"
 	"errors"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -100,6 +101,10 @@ func (service *AuthService) Login(param *dtos.LoginDto) (*LoginResponse, error) 
 }
 
 func (service *AuthService) RefreshToken(token string) (*LoginResponse, error) {
+	if len(token) == 0 {
+		return nil, common.NewBadRequestError(errors.New("refresh token is empty"))
+	}
+
 	if data, err := service.jwtService.JwtVerify(token); err != nil {
 		return nil, err
 	} else {
@@ -113,8 +118,8 @@ func (service *AuthService) getToken(id int) (*LoginResponse, error) {
 		return nil, err
 	}
 
-	accClaim := jwt.NewUserCustomClaims(id, service.accessExpire)
-	refClaim := jwt.NewUserCustomClaims(id, service.refreshExpire)
+	accClaim := jwt.NewUserCustomClaims(id, time.Duration(service.accessExpire)*time.Second)
+	refClaim := jwt.NewUserCustomClaims(id, time.Duration(service.refreshExpire)*time.Second)
 	res := &LoginResponse{
 		AccessToken:  service.jwtService.JwtSign(accClaim),
 		RefreshToken: service.jwtService.JwtSign(refClaim),

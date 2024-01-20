@@ -14,6 +14,11 @@ type Model struct {
 }
 
 type IModel interface {
+	IGormModel
+	IJsonModel
+}
+
+type IGormModel interface {
 	// print model
 	String() string
 	// gorm table name

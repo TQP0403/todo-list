@@ -1,6 +1,7 @@
 package server
 
 import (
+	"TQP0403/todo-list/src/db"
 	"TQP0403/todo-list/src/modules/app"
 	"TQP0403/todo-list/src/modules/auth"
 	"TQP0403/todo-list/src/modules/cache"
@@ -9,7 +10,6 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 type IController interface {
@@ -27,16 +27,15 @@ func (r *Router) Register(router *gin.Engine) {
 	}
 }
 
-func Default(db *gorm.DB) *Router {
-	// secret := []byte(os.Getenv("JWT_SECRET"))
+func Default(myDb db.IMyGormService) *Router {
 	// repos
-	authRepo := auth.NewRepo(db)
-	taskRepo := task.NewRepo(db)
+	authRepo := auth.NewRepo(myDb.GetDB())
+	taskRepo := task.NewRepo(myDb.GetDB())
 
 	// services
 	cacheService := cache.NewDefaultCacheService()
 	appService := app.NewService()
-	jwtService := jwt.NewJwtService([]byte(os.Getenv("JWT_SECRET")))
+	jwtService := jwt.NewJwtService(os.Getenv("JWT_SECRET"))
 	authService := auth.NewService(authRepo, jwtService, cacheService)
 	taskService := task.NewService(taskRepo, cacheService)
 

@@ -7,7 +7,7 @@ import (
 	"TQP0403/todo-list/src/middlewares"
 	"TQP0403/todo-list/src/server"
 	"fmt"
-	"log"
+	"os"
 
 	_ "TQP0403/todo-list/docs"
 
@@ -30,7 +30,7 @@ import (
 //	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
 
 // @host		localhost:3000
-// @BasePath	/
+// @BasePath	/api
 func main() {
 	config.Init()
 
@@ -41,17 +41,16 @@ func main() {
 	router.Use(gin.Recovery())
 	router.Use(middlewares.CORSMiddleware())
 
-	db.Init()
-	if env := helper.GetDefaultEnv("ENV", "development"); env != "production" {
-		db.Migrate()
+	var myDb db.IMyGormService = db.Init()
+	if env := os.Getenv("ENV"); env != "production" {
+		// auto migration
+		myDb.Migrate()
+		// swagger
 		router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 
-	s := server.Default(db.GetDB())
+	s := server.Default(myDb)
 	s.Register(router)
 
-	port := fmt.Sprintf(":%s", helper.GetDefaultEnv("PORT", "8080"))
-	if err := router.Run(port); err != nil {
-		log.Fatalf("Go Gin run err: %s\n", err)
-	}
+	router.Run(fmt.Sprintf(":%s", helper.GetDefaultEnv("PORT", "8080")))
 }

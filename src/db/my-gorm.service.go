@@ -14,9 +14,16 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-var db *gorm.DB
+type MyGormService struct {
+	db *gorm.DB
+}
 
-func Init() {
+type IMyGormService interface {
+	GetDB() *gorm.DB
+	Migrate()
+}
+
+func Init() *MyGormService {
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		helper.GetDefaultEnv("DB_HOST", "localhost"),
 		helper.GetDefaultEnv("DB_PORT", "5432"),
@@ -30,8 +37,7 @@ func Init() {
 		newLogger = logger.Default.LogMode(logger.Info)
 	}
 
-	var err error
-	db, err = gorm.Open(
+	db, err := gorm.Open(
 		postgres.New(postgres.Config{
 			DSN:                  dsn,
 			PreferSimpleProtocol: true, // disables implicit prepared statement usage
@@ -68,14 +74,16 @@ func Init() {
 
 	// SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
 	sqlDB.SetConnMaxLifetime(time.Hour)
+
+	return &MyGormService{db: db}
 }
 
-func GetDB() *gorm.DB {
-	return db
+func (server *MyGormService) GetDB() *gorm.DB {
+	return server.db
 }
 
-func Migrate() {
-	if err := db.AutoMigrate(&models.User{}, &models.Task{}); err != nil {
+func (server *MyGormService) Migrate() {
+	if err := server.db.AutoMigrate(&models.Task{}, &models.User{}); err != nil {
 		log.Fatalln("Migrate error", err)
 	}
 

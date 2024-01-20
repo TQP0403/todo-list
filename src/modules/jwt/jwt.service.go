@@ -21,12 +21,12 @@ type JwtService struct {
 	secret []byte
 }
 
-func NewJwtService(secret []byte) *JwtService {
-	return &JwtService{secret: secret}
+func NewJwtService(secretKey string) *JwtService {
+	return &JwtService{secret: []byte(secretKey)}
 }
 
-func NewUserCustomClaims(userId int, expireTime int) *UserCustomClaims {
-	expirationTime := time.Now().Add(time.Second * time.Duration(expireTime))
+func NewUserCustomClaims(userId int, expireTime time.Duration) *UserCustomClaims {
+	expirationTime := time.Now().Add(expireTime)
 	return &UserCustomClaims{
 		UserId: userId,
 		RegisteredClaims: jwt.RegisteredClaims{
