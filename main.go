@@ -42,7 +42,7 @@ func main() {
 	router.Use(middlewares.CORSMiddleware())
 
 	var myDb db.IMyGormService = db.Init()
-	if env := os.Getenv("ENV"); env != "production" {
+	if env := os.Getenv("GIN_ENV"); env != "production" {
 		// auto migration
 		myDb.Migrate()
 		// swagger
@@ -52,5 +52,5 @@ func main() {
 	s := server.Default(myDb)
 	s.Register(router)
 
-	router.Run(fmt.Sprintf(":%s", helper.GetDefaultEnv("PORT", "8080")))
+	router.Run(fmt.Sprintf(":%s", helper.GetDefaultEnv("GIN_PORT", "8080")))
 }

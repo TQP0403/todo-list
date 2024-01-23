@@ -1,65 +1,56 @@
-############################
-# STEP 1 build executable binary
-############################
-FROM golang:alpine AS builder
-# Install git.
-# Git is required for fetching the dependencies.
-RUN apk update && apk add --no-cache 'git=~2'
 
-# Install dependencies
-ENV GO111MODULE=on
-WORKDIR $GOPATH/src/packages/goginapp/
+###################
+# build stage
+###################
+
+FROM golang:1.21-alpine AS builder
+
+# RUN apk add --no-cache git
+# WORKDIR /go/src/app
+# COPY . .
+
+# RUN go get -d -v ./...
+# RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /go/bin/app -v .
+
+ARG CGO_ENABLED=0
+ARG GOOS=linux
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
 COPY . .
 
-# Fetch dependencies.
-# Using go get.
-RUN go get -d -v
+RUN go build -ldflags="-s -w" -o /go/bin/app -v .
 
-# Build the binary.
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /go/main .
+###################
+# development stage 
+###################
 
-############################
-# STEP 2 build a small image
-############################
+FROM alpine:latest AS dev
 
-############################
- # development
-############################
-FROM alpine:3 as dev
+RUN addgroup -S app && adduser -S app -G app
+COPY --from=builder --chown=app /go/bin/app /app
+USER app
 
-WORKDIR /
-
-# Copy our static executable.
-COPY --from=builder /go/main /go/main
-COPY public /go/public
-
-ENV PORT 8080
-ENV ENV development
+ENV GIN_ENV development
+ENV GIN_PORT 8080
 ENV GIN_MODE debug
-EXPOSE 8080
 
-WORKDIR /go
+ENTRYPOINT ["/app"]
 
-# Run the Go Gin binary.
-ENTRYPOINT ["/go/main"]
+###################
+# production stage 
+###################
 
-############################
- # production
-############################
-FROM alpine:3 as prod
+FROM alpine:latest AS PROD
 
-WORKDIR /
+RUN addgroup -S app && adduser -S app -G app
+COPY --from=builder --chown=app /go/bin/app /app
+USER app
 
-# Copy our static executable.
-COPY --from=builder /go/main /go/main
-COPY public /go/public
-
-ENV PORT 8080
-ENV ENV production
+ENV GIN_ENV production
+ENV GIN_PORT 8080
 ENV GIN_MODE release
-EXPOSE 8080
 
-WORKDIR /go
-
-# Run the Go Gin binary.
-ENTRYPOINT ["/go/main"]
+ENTRYPOINT ["/app"] 
