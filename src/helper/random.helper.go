@@ -13,10 +13,13 @@ const (
 	CharsetNumeric
 )
 
+const charsetAlpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const charsetNumeric = "0123456789"
+
 var Charsets = map[CharsetType]string{
-	CharsetAlphaNumeric: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-	CharsetAlpha:        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
-	CharsetNumeric:      "0123456789",
+	CharsetAlphaNumeric: charsetAlpha + charsetNumeric,
+	CharsetAlpha:        charsetAlpha,
+	CharsetNumeric:      charsetNumeric,
 }
 
 func GenerateRandomString(charsetType CharsetType, length int) string {
