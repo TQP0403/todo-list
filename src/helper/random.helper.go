@@ -26,7 +26,7 @@ func GenerateRandomString(charsetType CharsetType, length int) string {
 	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
 	charset := Charsets[charsetType]
 
-	b := make([]byte, GetDefaultNumber[int](length, 10))
+	b := make([]byte, length)
 	for i := range b {
 		b[i] = charset[seededRand.Intn(len(charset))]
 	}
