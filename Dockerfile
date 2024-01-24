@@ -5,22 +5,15 @@
 
 FROM golang:1.21-alpine AS builder
 
-# RUN apk add --no-cache git
-# WORKDIR /go/src/app
-# COPY . .
-
-# RUN go get -d -v ./...
-# RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /go/bin/app -v .
-
-ARG CGO_ENABLED=0
-ARG GOOS=linux
-
+RUN apk add --no-cache git
 WORKDIR /app
 
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 
+ARG CGO_ENABLED=0
+ARG GOOS=linux
 RUN go build -ldflags="-s -w" -o /go/bin/app -v .
 
 ###################
