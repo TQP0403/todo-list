@@ -8,6 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const jwtKey = "user-id"
+
 func JwtMiddleware(jwtService IJwtService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		req := ctx.Request
@@ -24,14 +26,14 @@ func JwtMiddleware(jwtService IJwtService) gin.HandlerFunc {
 			cusErr := common.NewUnauthorizedError(err)
 			ctx.AbortWithStatusJSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
 		} else {
-			ctx.Set("user-id", data.UserId)
+			ctx.Set(jwtKey, data.UserId)
 			ctx.Next()
 		}
 	}
 }
 
 func GetUserId(ctx *gin.Context) int {
-	userId := ctx.MustGet("user-id").(int)
+	userId := ctx.MustGet(jwtKey).(int)
 	if userId == 0 {
 		cusErr := common.NewBadRequestError(errors.New("header userId not found"))
 		ctx.AbortWithStatusJSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
