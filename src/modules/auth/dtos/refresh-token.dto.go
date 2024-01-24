@@ -1,5 +1,5 @@
 package dtos
 
 type RefreshTokenDto struct {
-	Token string `json:"token"`
+	Token string `json:"token" binding:"required"`
 }
