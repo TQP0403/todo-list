@@ -3,84 +3,71 @@ package file
 import (
 	"TQP0403/todo-list/src/common"
 	"TQP0403/todo-list/src/helper"
-	"bytes"
-	"errors"
-	"io"
+	"context"
+	"log"
 	"mime/multipart"
+	"net/url"
 	"os"
 	"strings"
-)
 
-var fileLimit = helper.GetDefaultNumber[int64](
-	int64(helper.ParseInt(os.Getenv("UPLOAD_FILE_LIMIT"))),
-	1024*1024, // 1mb
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
-
-type FileService struct{}
 
 type IFileService interface {
-	UploadFile(fileHeader *multipart.FileHeader) (string, error)
+	UploadFile(header *multipart.FileHeader) (string, error)
+}
+
+type FileService struct {
+	enable       bool
+	s3Cloudfront string
+	s3Bucket     string
+	s3Client     *s3.Client
 }
 
 func NewService() *FileService {
-	return &FileService{}
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("ap-southeast-1"))
+	if err != nil {
+		log.Println(err)
+	}
+
+	s3Cloudfront := os.Getenv("S3_CLOUD_FRONT")
+	s3Bucket := os.Getenv("S3_BUCKET")
+	enable := err == nil && len(s3Cloudfront) > 0 && len(s3Bucket) > 0
+	if strings.LastIndex(s3Cloudfront, "https://") == -1 {
+		s3Cloudfront = "https://" + s3Cloudfront
+	}
+
+	return &FileService{
+		enable:       enable,
+		s3Cloudfront: s3Cloudfront,
+		s3Bucket:     s3Bucket,
+		s3Client:     s3.NewFromConfig(cfg),
+	}
 }
 
 func (service *FileService) UploadFile(header *multipart.FileHeader) (string, error) {
-	fileName, _, err := readFile(header)
+	if !service.enable {
+		return "", nil
+	}
+
+	f, err := ReadFile(header)
 	if err != nil {
 		return "", err
 	}
+	defer f.Body.Close()
 
-	key := helper.RandomAplphaNumeric(16) + "-" + fileName
+	key := helper.RandomAplphaNumeric(16) + "-" + f.Name
 
-	// Read the contents of the file into a buffer
-
-	// // This uploads the contents of the buffer to S3
-	// _, err := svc.PutObject(&s3.PutObjectInput{
-	// 	Bucket: aws.String(bucket),
-	// 	Key:    aws.String(key),
-	// 	Body:   bytes.NewReader(buffer.Bytes()),
-	// })
-	// if err != nil {
-	// 	return "", common.NewInternalServerError(err)
-	// }
-
-	fileUrl := key
-
-	return fileUrl, nil
-}
-
-func readFile(fileHeader *multipart.FileHeader) (string, bytes.Buffer, error) {
-	fileName := strings.ReplaceAll(fileHeader.Filename, " ", "-")
-	var buffer bytes.Buffer
-
-	if err := validateUploadFile(fileHeader); err != nil {
-		return "", buffer, common.NewBadRequestError(err)
-	}
-
-	file, err := fileHeader.Open()
+	_, err = service.s3Client.PutObject(context.Background(), &s3.PutObjectInput{
+		Bucket: aws.String(""),
+		Key:    aws.String(key),
+		Body:   f.Body,
+	})
 	if err != nil {
-		return "", buffer, common.NewBadRequestError(err)
-	}
-	// close file
-	defer file.Close()
-
-	if _, err := io.Copy(&buffer, file); err != nil {
-		return "", buffer, common.NewInternalServerError(err)
+		return "", common.NewInternalServerError(err)
 	}
 
-	return fileName, buffer, nil
-}
-
-func validateUploadFile(file *multipart.FileHeader) error {
-	if file.Size > fileLimit {
-		return errors.New("file too large")
-	}
-
-	if contentType := file.Header.Get("Content-Type"); contentType != "image/jpeg" && contentType != "image/png" {
-		return errors.New("filetype is not supported")
-	}
-
-	return nil
+	return url.JoinPath(service.s3Cloudfront, key)
 }

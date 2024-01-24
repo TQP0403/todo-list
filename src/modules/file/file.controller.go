@@ -26,16 +26,16 @@ func (ctrl *FileController) handleUploadFile(ctx *gin.Context) {
 	fileHeader, err := ctx.FormFile("file")
 	if err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
+		ctx.AbortWithStatusJSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
+		return
 	}
 
 	url, err := ctrl.service.UploadFile(fileHeader)
 	if err != nil {
 		cusErr := common.NewInternalServerError(err)
-		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
+		ctx.AbortWithStatusJSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
+		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"url": url,
-	})
+	ctx.JSON(http.StatusOK, common.NewSuccessResponse(url))
 }
