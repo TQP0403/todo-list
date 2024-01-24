@@ -52,18 +52,24 @@ func (service *FileService) UploadFile(header *multipart.FileHeader) (string, er
 		return "", nil
 	}
 
-	f, err := ReadFile(header)
-	if err != nil {
-		return "", err
+	// validate upload file
+	if err := ValidateUploadFile(header); err != nil {
+		return "", common.NewBadRequestError(err)
 	}
-	defer f.Body.Close()
 
-	key := helper.RandomAplphaNumeric(16) + "-" + f.Name
+	// open file
+	file, err := header.Open()
+	if err != nil {
+		return "", common.NewBadRequestError(err)
+	}
+	defer file.Close()
 
+	// store on AWS S3
+	key := helper.RandomAplphaNumeric(16) + "-" + strings.ReplaceAll(header.Filename, " ", "-")
 	_, err = service.s3Client.PutObject(context.Background(), &s3.PutObjectInput{
-		Bucket: aws.String(""),
+		Bucket: aws.String(service.s3Bucket),
 		Key:    aws.String(key),
-		Body:   f.Body,
+		Body:   file,
 	})
 	if err != nil {
 		return "", common.NewInternalServerError(err)
