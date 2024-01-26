@@ -4,7 +4,6 @@ import (
 	"TQP0403/todo-list/src/common"
 	"TQP0403/todo-list/src/helper"
 	"context"
-	"log"
 	"mime/multipart"
 	"net/url"
 	"os"
@@ -28,12 +27,9 @@ type FileService struct {
 
 func NewService() *FileService {
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("ap-southeast-1"))
-	if err != nil {
-		log.Println(err)
-	}
 
-	s3Cloudfront := os.Getenv("S3_CLOUD_FRONT")
-	s3Bucket := os.Getenv("S3_BUCKET")
+	s3Cloudfront := os.Getenv("AWS_S3_CLOUD_FRONT")
+	s3Bucket := os.Getenv("AWS_S3_BUCKET")
 	enable := err == nil && len(s3Cloudfront) > 0 && len(s3Bucket) > 0
 	if strings.LastIndex(s3Cloudfront, "https://") == -1 {
 		s3Cloudfront = "https://" + s3Cloudfront
@@ -47,31 +43,32 @@ func NewService() *FileService {
 	}
 }
 
-func (service *FileService) UploadFile(header *multipart.FileHeader) (string, error) {
+func (service *FileService) UploadFile(fileHeader *multipart.FileHeader) (string, error) {
 	if !service.enable {
 		return "", nil
 	}
 
 	// validate upload file
-	if err := ValidateUploadFile(header); err != nil {
+	if err := ValidateUploadFile(fileHeader); err != nil {
 		return "", common.NewBadRequestError(err)
 	}
 
 	// open file
-	file, err := header.Open()
+	file, err := fileHeader.Open()
 	if err != nil {
 		return "", common.NewBadRequestError(err)
 	}
 	defer file.Close()
 
 	// store on AWS S3
-	key := helper.RandomAplphaNumeric(16) + "-" + strings.ReplaceAll(header.Filename, " ", "-")
-	_, err = service.s3Client.PutObject(context.Background(), &s3.PutObjectInput{
-		Bucket: aws.String(service.s3Bucket),
-		Key:    aws.String(key),
-		Body:   file,
-	})
-	if err != nil {
+	key := helper.RandomAplphaNumeric(16) + "-" + strings.ReplaceAll(fileHeader.Filename, " ", "-")
+
+	if _, err = service.s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket:      aws.String(service.s3Bucket),
+		Key:         aws.String(key),
+		ContentType: aws.String(fileHeader.Header.Get("Content-Type")),
+		Body:        file,
+	}); err != nil {
 		return "", common.NewInternalServerError(err)
 	}
 
