@@ -11,6 +11,7 @@ var CommonErr = map[int]string{
 	http.StatusNotFound:            "Not Found",
 	http.StatusTooManyRequests:     "Too Many Requests",
 	http.StatusInternalServerError: "Server Error",
+	http.StatusServiceUnavailable:  "Service Unavailable",
 }
 
 type AppError struct {
@@ -72,4 +73,8 @@ func NewTooManyRequestsError(err error) *AppError {
 
 func NewInternalServerError(err error) *AppError {
 	return newCommonError(http.StatusInternalServerError, err)
+}
+
+func NewServiceUnavailableError(err error) *AppError {
+	return newCommonError(http.StatusServiceUnavailable, err)
 }

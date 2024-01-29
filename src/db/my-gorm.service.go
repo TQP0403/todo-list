@@ -87,5 +87,5 @@ func (server *MyGormService) Migrate() {
 		log.Fatalln("Migrate error", err)
 	}
 
-	fmt.Println("> Migration success!!!")
+	log.Println(" Migration success!!!")
 }

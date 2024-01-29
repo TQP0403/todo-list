@@ -1,7 +1,7 @@
 package middlewares
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,7 +16,7 @@ func CORSMiddleware() gin.HandlerFunc {
 		ctx.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		if ctx.Request.Method == "OPTIONS" {
-			fmt.Println("OPTIONS")
+			log.Println("OPTIONS")
 			ctx.AbortWithStatus(200)
 		} else {
 			ctx.Next()
