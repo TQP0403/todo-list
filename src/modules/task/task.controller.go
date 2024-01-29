@@ -57,13 +57,13 @@ func (ctrl *TaskController) handleGetListTask(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindQuery(pQuery); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.AbortWithStatusJSON(cusErr.StatusCode, cusErr)
+		ctx.JSON(cusErr.StatusCode, cusErr)
 		return
 	}
 
 	if tasks, err := ctrl.service.GetListTask(userId, pQuery); err != nil {
 		cusErr := common.NewInternalServerError(err)
-		ctx.AbortWithStatusJSON(cusErr.StatusCode, cusErr)
+		ctx.JSON(cusErr.StatusCode, cusErr)
 	} else {
 		res := common.NewPaginationResponse(pQuery, tasks)
 		ctx.JSON(http.StatusOK, res.GetSuccessResponse())
@@ -77,7 +77,7 @@ func (ctrl *TaskController) handleGetTaskById(ctx *gin.Context) {
 
 	if task, err := ctrl.service.GetTaskById(userId, id); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.AbortWithStatusJSON(cusErr.StatusCode, cusErr)
+		ctx.JSON(cusErr.StatusCode, cusErr)
 	} else {
 		ctx.JSON(http.StatusOK, common.NewSuccessResponse(task))
 	}
