@@ -9,13 +9,21 @@ import (
 	"gorm.io/gorm"
 )
 
+// enum TaskStatus
 type TaskStatus int8
 
 const (
-	TaskStatusInProccess TaskStatus = iota
-	TaskStatusDone
-	TaskStatusPause
+	InProccess TaskStatus = iota
+	Done
+	Cancel
 )
+
+// enum TaskStatus implement stringer
+var taskStatusStr = []string{"InProccess", "Done", "Cancel"}
+
+func (e TaskStatus) String() string {
+	return taskStatusStr[e]
+}
 
 type Task struct {
 	ID        int            `json:"id" gorm:"primarykey"`
@@ -35,7 +43,7 @@ func (Task) TableName() string {
 
 func (task Task) String() string {
 	return fmt.Sprintf(
-		"[task] id:%d - user_id:%d - title:%s - status:%d - content:%s\n",
+		"[task] id:%d - user_id:%d - title:%s - status:%s - content:%s\n",
 		task.ID,
 		task.UserID,
 		task.Title,
@@ -50,21 +58,4 @@ func (task *Task) MarshalBinary() (data []byte, err error) {
 
 func (task *Task) UnmarshalBinary(data []byte) error {
 	return json.Unmarshal(data, task)
-}
-
-func (task *Task) Marshal() (string, error) {
-	// struct to string
-	if data, err := json.Marshal(task); err != nil {
-		return "", err
-	} else {
-		return string(data), nil
-	}
-}
-
-func (task *Task) Unmarshal(jsonStr string) error {
-	// string to struct
-	if err := json.Unmarshal([]byte(jsonStr), &task); err != nil {
-		return err
-	}
-	return nil
 }

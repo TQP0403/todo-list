@@ -1,6 +1,7 @@
 package db
 
 import (
+	"TQP0403/todo-list/src/common"
 	"TQP0403/todo-list/src/helper"
 	"TQP0403/todo-list/src/models"
 	"fmt"
@@ -83,9 +84,16 @@ func (server *MyGormService) GetDB() *gorm.DB {
 }
 
 func (server *MyGormService) Migrate() {
-	if err := server.db.AutoMigrate(&models.Task{}, &models.User{}); err != nil {
-		log.Fatalln("Migrate error", err)
+	var m []interface{}
+	m = append(m, &models.User{}, &models.Task{})
+
+	if err := common.IsModel(m...); err != nil {
+		log.Fatalln("Check model error:", err)
 	}
 
-	log.Println(" Migration success!!!")
+	if err := server.db.AutoMigrate(m...); err != nil {
+		log.Fatalln("Migrate error:", err)
+	}
+
+	log.Println("Migration success!!!")
 }

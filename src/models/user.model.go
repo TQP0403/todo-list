@@ -25,7 +25,7 @@ func (User) TableName() string {
 
 func (user User) String() string {
 	return fmt.Sprintf(
-		"[task] id:%d - display_name:%s - username:%s\n",
+		"[user] id:%d - display_name:%s - username:%s\n",
 		user.ID,
 		user.DisplayName,
 		user.Username,
@@ -38,21 +38,4 @@ func (user *User) MarshalBinary() (data []byte, err error) {
 
 func (user *User) UnmarshalBinary(data []byte) error {
 	return json.Unmarshal(data, user)
-}
-
-func (user *User) Marshal() (string, error) {
-	// struct to string
-	if data, err := json.Marshal(user); err != nil {
-		return "", err
-	} else {
-		return string(data), nil
-	}
-}
-
-func (user *User) Unmarshal(jsonStr string) error {
-	// string to struct
-	if err := json.Unmarshal([]byte(jsonStr), &user); err != nil {
-		return err
-	}
-	return nil
 }

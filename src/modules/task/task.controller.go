@@ -20,13 +20,14 @@ func NewController(service *TaskService, jwtService *jwt.JwtService) *TaskContro
 }
 
 func (ctrl *TaskController) Register(router *gin.Engine) {
+
 	group := router.Group("/api/task")
 	{
-		group.POST("/", jwt.JwtMiddleware(ctrl.jwtService), ctrl.handleCreateTask)
-		group.GET("/", jwt.JwtMiddleware(ctrl.jwtService), ctrl.handleGetListTask)
-		group.GET("/:id", jwt.JwtMiddleware(ctrl.jwtService), ctrl.handleGetTaskById)
-		group.PUT("/:id", jwt.JwtMiddleware(ctrl.jwtService), ctrl.handleUpdateTask)
-		group.DELETE("/:id", jwt.JwtMiddleware(ctrl.jwtService), ctrl.handleDeleteTask)
+		group.POST("/", ctrl.jwtService.JwtMiddleware(), ctrl.handleCreateTask)
+		group.GET("/", ctrl.jwtService.JwtMiddleware(), ctrl.handleGetListTask)
+		group.GET("/:id", ctrl.jwtService.JwtMiddleware(), ctrl.handleGetTaskById)
+		group.PUT("/:id", ctrl.jwtService.JwtMiddleware(), ctrl.handleUpdateTask)
+		group.DELETE("/:id", ctrl.jwtService.JwtMiddleware(), ctrl.handleDeleteTask)
 	}
 }
 
@@ -36,14 +37,14 @@ func (ctrl *TaskController) handleCreateTask(ctx *gin.Context) {
 	var reqData dtos.CreateTaskDto
 	if err := ctx.ShouldBind(&reqData); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
+		ctx.JSON(cusErr.StatusCode, cusErr.GetErrorResponse())
 		return
 	}
 	reqData.UserID = userId
 
 	if _, err := ctrl.service.CreateTask(&reqData); err != nil {
 		cusErr := common.NewInternalServerError(err)
-		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
+		ctx.JSON(cusErr.StatusCode, cusErr.GetErrorResponse())
 		return
 	}
 
@@ -51,23 +52,22 @@ func (ctrl *TaskController) handleCreateTask(ctx *gin.Context) {
 }
 
 func (ctrl *TaskController) handleGetListTask(ctx *gin.Context) {
-	pQuery := common.BindPagination(ctx)
+	pQuery := common.NewPagination()
 	userId := jwt.GetUserId(ctx)
 
-	tasks, err := ctrl.service.GetListTask(userId, &pQuery)
-
-	if err != nil {
-		cusErr := common.NewInternalServerError(err)
-		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
+	if err := ctx.ShouldBindQuery(pQuery); err != nil {
+		cusErr := common.NewBadRequestError(err)
+		ctx.AbortWithStatusJSON(cusErr.StatusCode, cusErr.GetErrorResponse())
 		return
 	}
 
-	res := &common.PaginationResponse{
-		Metadata: pQuery,
-		Rows:     tasks,
+	if tasks, err := ctrl.service.GetListTask(userId, pQuery); err != nil {
+		cusErr := common.NewInternalServerError(err)
+		ctx.AbortWithStatusJSON(cusErr.StatusCode, cusErr.GetErrorResponse())
+	} else {
+		res := common.NewPaginationResponse(pQuery, tasks)
+		ctx.JSON(http.StatusOK, res.GetSuccessResponse())
 	}
-
-	ctx.JSON(http.StatusOK, common.NewListResponse(res))
 }
 
 func (ctrl *TaskController) handleGetTaskById(ctx *gin.Context) {
@@ -77,7 +77,7 @@ func (ctrl *TaskController) handleGetTaskById(ctx *gin.Context) {
 
 	if task, err := ctrl.service.GetTaskById(userId, id); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
+		ctx.AbortWithStatusJSON(cusErr.StatusCode, cusErr.GetErrorResponse())
 	} else {
 		ctx.JSON(http.StatusOK, common.NewSuccessResponse(task))
 	}
@@ -85,19 +85,18 @@ func (ctrl *TaskController) handleGetTaskById(ctx *gin.Context) {
 
 func (ctrl *TaskController) handleUpdateTask(ctx *gin.Context) {
 	userId := jwt.GetUserId(ctx)
-
 	var reqData dtos.UpdateTaskDto
 
 	if err := ctx.ShouldBind(&reqData); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
+		ctx.JSON(cusErr.StatusCode, cusErr.GetErrorResponse())
 		return
 	}
 
 	reqData.ID = helper.ParseInt(ctx.Param("id"))
 	if err := ctrl.service.UpdateTask(userId, &reqData); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
+		ctx.JSON(cusErr.StatusCode, cusErr.GetErrorResponse())
 	} else {
 		ctx.JSON(http.StatusOK, common.NewSimpleResponse())
 	}
@@ -109,7 +108,7 @@ func (ctrl *TaskController) handleDeleteTask(ctx *gin.Context) {
 
 	if err := ctrl.service.DeleteTask(userId, id); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.JSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
+		ctx.JSON(cusErr.StatusCode, cusErr.GetErrorResponse())
 		return
 	}
 

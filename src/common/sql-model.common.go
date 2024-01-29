@@ -1,6 +1,8 @@
 package common
 
 import (
+	"encoding"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -14,22 +16,21 @@ type Model struct {
 }
 
 type IModel interface {
-	IGormModel
-	IJsonModel
-}
-
-type IGormModel interface {
-	// print model
+	// implement stringer: print model
 	String() string
-	// gorm table name
+	// implement gorm model: table name
 	TableName() string
+
+	// json handle
+	encoding.BinaryMarshaler
+	encoding.BinaryUnmarshaler
 }
 
-type IJsonModel interface {
-	MarshalBinary() (data []byte, err error)
-	UnmarshalBinary(data []byte) error
-	// to json string
-	Marshal() (string, error)
-	// fromjson string
-	Unmarshal(jsonStr string) error
+func IsModel(models ...interface{}) error {
+	for _, val := range models {
+		if _, ok := val.(IModel); !ok {
+			return fmt.Errorf("not a model: %s", val)
+		}
+	}
+	return nil
 }

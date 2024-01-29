@@ -4,6 +4,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -15,6 +16,7 @@ type UserCustomClaims struct {
 type IJwtService interface {
 	JwtSign(claim *UserCustomClaims) string
 	JwtVerify(tokenStr string) (*UserCustomClaims, error)
+	JwtMiddleware() gin.HandlerFunc
 }
 
 type JwtService struct {

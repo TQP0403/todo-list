@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-var CommonErr = map[int]string{
+var commonErr = map[int]string{
 	http.StatusUnauthorized:        "Unauthorized",
 	http.StatusBadRequest:          "Bad Request",
 	http.StatusConflict:            "Conflict",
@@ -34,6 +34,10 @@ func (e *AppError) RootErr() error {
 	return e.Err
 }
 
+func (err *AppError) GetErrorResponse() ErrorResponse {
+	return ErrorResponse{Message: "error", Error: err.Message, Log: err.Error()}
+}
+
 // error wrapper
 func NewAppError(statusCode int, message string, err error) *AppError {
 	return &AppError{
@@ -44,11 +48,12 @@ func NewAppError(statusCode int, message string, err error) *AppError {
 }
 
 func newCommonError(statusCode int, err error) *AppError {
+	// do not wrap AppError
 	if val, ok := err.(*AppError); ok {
 		return val
 	}
 
-	return NewAppError(statusCode, CommonErr[statusCode], err)
+	return NewAppError(statusCode, commonErr[statusCode], err)
 }
 
 func NewUnauthorizedError(err error) *AppError {

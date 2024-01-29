@@ -10,7 +10,7 @@ import (
 
 const jwtKey = "user-id"
 
-func JwtMiddleware(jwtService IJwtService) gin.HandlerFunc {
+func (service *JwtService) JwtMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		req := ctx.Request
 
@@ -22,9 +22,9 @@ func JwtMiddleware(jwtService IJwtService) gin.HandlerFunc {
 			token = strArr[1]
 		}
 
-		if data, err := jwtService.JwtVerify(token); err != nil {
+		if data, err := service.JwtVerify(token); err != nil {
 			cusErr := common.NewUnauthorizedError(err)
-			ctx.AbortWithStatusJSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
+			ctx.AbortWithStatusJSON(cusErr.StatusCode, cusErr.GetErrorResponse())
 		} else {
 			ctx.Set(jwtKey, data.UserId)
 			ctx.Next()
@@ -36,7 +36,7 @@ func GetUserId(ctx *gin.Context) int {
 	userId := ctx.MustGet(jwtKey).(int)
 	if userId == 0 {
 		cusErr := common.NewBadRequestError(errors.New("header userId not found"))
-		ctx.AbortWithStatusJSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
+		ctx.AbortWithStatusJSON(cusErr.StatusCode, cusErr.GetErrorResponse())
 	}
 
 	return userId

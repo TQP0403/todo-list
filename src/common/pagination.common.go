@@ -1,38 +1,31 @@
 package common
 
-import (
-	"net/http"
-
-	"github.com/gin-gonic/gin"
-)
-
 type Pagination struct {
 	Total    int64 `json:"total" form:"-"`
-	Page     int   `json:"page" form:"page"`
-	PageSize int   `json:"pageSize" form:"page-size"`
+	Page     int   `json:"page" form:"page,default=1" binding:"gte=1"`
+	PageSize int   `json:"pageSize" form:"page-size,default=10" binding:"gte=0,lte=1000"`
 }
 
 type PaginationResponse struct {
-	Metadata Pagination  `json:"metadata"`
+	Metadata *Pagination `json:"metadata"`
 	Rows     interface{} `json:"rows"`
 }
 
-func BindPagination(ctx *gin.Context) Pagination {
-	query := Pagination{Page: 1, PageSize: 10}
-	if err := ctx.ShouldBindQuery(&query); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": "error",
-			"error":   "BadRequest",
-		})
+func NewPagination() *Pagination {
+	return &Pagination{
+		Total:    0,
+		Page:     1,
+		PageSize: 10,
 	}
+}
 
-	if query.Page < 1 {
-		query.Page = 1
+func NewPaginationResponse(metadata *Pagination, rows interface{}) *PaginationResponse {
+	return &PaginationResponse{
+		Metadata: metadata,
+		Rows:     rows,
 	}
+}
 
-	if query.PageSize < 1 {
-		query.PageSize = 10
-	}
-
-	return query
+func (data *PaginationResponse) GetSuccessResponse() SuccessResponse {
+	return SuccessResponse{Message: "ok", Data: data.Rows, Metadata: data.Metadata}
 }
