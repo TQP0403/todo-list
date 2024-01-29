@@ -28,14 +28,14 @@ func (ctrl *FileController) handleUploadFile(ctx *gin.Context) {
 	uploadDto := &dtos.UploadFileDto{}
 	if err := ctx.MustBindWith(uploadDto, binding.FormMultipart); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.AbortWithStatusJSON(cusErr.StatusCode, cusErr.GetErrorResponse())
+		ctx.AbortWithStatusJSON(cusErr.StatusCode, cusErr)
 		return
 	}
 
 	// fileHeader, err := ctx.FormFile("file")
 	if url, err := ctrl.service.UploadFile(uploadDto.File); err != nil {
 		cusErr := common.NewInternalServerError(err)
-		ctx.AbortWithStatusJSON(cusErr.StatusCode, cusErr.GetErrorResponse())
+		ctx.AbortWithStatusJSON(cusErr.StatusCode, cusErr)
 	} else {
 		ctx.JSON(http.StatusOK, common.NewSuccessResponse(url))
 	}
