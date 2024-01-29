@@ -35,13 +35,13 @@ func (ctrl *AuthController) handleRefreshToken(ctx *gin.Context) {
 
 	if err := ctx.ShouldBind(&reqData); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.JSON(cusErr.StatusCode, cusErr.GetErrorResponse())
+		ctx.JSON(cusErr.StatusCode, cusErr)
 		return
 	}
 
 	if res, err := ctrl.service.RefreshToken(reqData.Token); err != nil {
 		cusErr := common.NewUnauthorizedError(err)
-		ctx.JSON(cusErr.StatusCode, cusErr.GetErrorResponse())
+		ctx.JSON(cusErr.StatusCode, cusErr)
 	} else {
 		ctx.JSON(http.StatusOK, common.NewSuccessResponse(res))
 	}
@@ -52,13 +52,13 @@ func (ctrl *AuthController) handleLogin(ctx *gin.Context) {
 
 	if err := ctx.ShouldBind(&reqData); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.JSON(cusErr.StatusCode, cusErr.GetErrorResponse())
+		ctx.JSON(cusErr.StatusCode, cusErr)
 		return
 	}
 
 	if res, err := ctrl.service.Login(&reqData); err != nil {
 		cusErr := common.NewUnauthorizedError(err)
-		ctx.JSON(cusErr.StatusCode, cusErr.GetErrorResponse())
+		ctx.JSON(cusErr.StatusCode, cusErr)
 	} else {
 		ctx.JSON(http.StatusOK, common.NewSuccessResponse(res))
 	}
@@ -69,13 +69,13 @@ func (ctrl *AuthController) handleRegister(ctx *gin.Context) {
 
 	if err := ctx.ShouldBind(&reqData); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.JSON(cusErr.StatusCode, cusErr.GetErrorResponse())
+		ctx.JSON(cusErr.StatusCode, cusErr)
 		return
 	}
 
 	if res, err := ctrl.service.Register(&reqData); err != nil {
 		cusErr := common.NewInternalServerError(err)
-		ctx.JSON(cusErr.StatusCode, cusErr.GetErrorResponse())
+		ctx.JSON(cusErr.StatusCode, cusErr)
 	} else {
 		ctx.JSON(http.StatusOK, common.NewSuccessResponse(res))
 	}
@@ -86,7 +86,7 @@ func (ctrl *AuthController) handleGetProfile(ctx *gin.Context) {
 
 	if res, err := ctrl.service.GetProfile(userId); err != nil {
 		cusErr := common.NewInternalServerError(err)
-		ctx.JSON(cusErr.StatusCode, cusErr.GetErrorResponse())
+		ctx.JSON(cusErr.StatusCode, cusErr)
 	} else {
 		ctx.JSON(http.StatusOK, common.NewSuccessResponse(res))
 	}
@@ -98,13 +98,13 @@ func (ctrl *AuthController) handleUpdateProfile(ctx *gin.Context) {
 
 	if err := ctx.ShouldBind(&p); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.JSON(cusErr.StatusCode, cusErr.GetErrorResponse())
+		ctx.JSON(cusErr.StatusCode, cusErr)
 		return
 	}
 
 	if err := ctrl.service.UpdateProfile(userId, &p); err != nil {
 		cusErr := common.NewInternalServerError(err)
-		ctx.JSON(cusErr.StatusCode, cusErr.GetErrorResponse())
+		ctx.JSON(cusErr.StatusCode, cusErr)
 	} else {
 		ctx.JSON(http.StatusOK, common.NewSimpleResponse())
 	}
@@ -116,13 +116,13 @@ func (ctrl *AuthController) handleChangePassword(ctx *gin.Context) {
 
 	if err := ctx.ShouldBind(&p); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.JSON(cusErr.StatusCode, cusErr.GetErrorResponse())
+		ctx.JSON(cusErr.StatusCode, cusErr)
 		return
 	}
 
 	if err := ctrl.service.ChangePassword(userId, &p); err != nil {
 		cusErr := common.NewInternalServerError(err)
-		ctx.JSON(cusErr.StatusCode, cusErr.GetErrorResponse())
+		ctx.JSON(cusErr.StatusCode, cusErr)
 	} else {
 		ctx.JSON(http.StatusOK, common.NewSimpleResponse())
 	}

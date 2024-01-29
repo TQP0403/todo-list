@@ -6,12 +6,6 @@ type SuccessResponse struct {
 	Data     interface{} `json:"data,omitempty"`
 }
 
-type ErrorResponse struct {
-	Message string `json:"message,omitempty"`
-	Error   string `json:"error,omitempty"`
-	Log     string `json:"log,omitempty"`
-}
-
 func NewSimpleResponse() SuccessResponse {
 	return SuccessResponse{Message: "ok"}
 }

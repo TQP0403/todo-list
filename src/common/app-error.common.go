@@ -15,35 +15,35 @@ var commonErr = map[int]string{
 }
 
 type AppError struct {
-	StatusCode int    `json:"statusCode"`
+	StatusCode int    `json:"-"`
+	Root       error  `json:"-"`
 	Message    string `json:"message"`
-	Err        error  `json:"-"`
+	Err        string `json:"error"`
+	Log        string `json:"log"`
 }
 
 // implement interface error
 func (e *AppError) Error() string {
-	return e.RootErr().Error()
+	return e.RootError().Error()
 }
 
-func (e *AppError) RootErr() error {
+func (e *AppError) RootError() error {
 	// parse AppError from interface error
-	if val, ok := e.Err.(*AppError); ok {
-		return val.RootErr()
+	if val, ok := e.Root.(*AppError); ok {
+		return val.RootError()
 	}
 
-	return e.Err
-}
-
-func (err *AppError) GetErrorResponse() ErrorResponse {
-	return ErrorResponse{Message: "error", Error: err.Message, Log: err.Error()}
+	return e.Root
 }
 
 // error wrapper
 func NewAppError(statusCode int, message string, err error) *AppError {
 	return &AppError{
 		StatusCode: statusCode,
-		Message:    message,
-		Err:        err,
+		Root:       err,
+		Message:    "fail",
+		Err:        message,
+		Log:        err.Error(),
 	}
 }
 
