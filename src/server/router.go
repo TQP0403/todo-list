@@ -5,6 +5,7 @@ import (
 	"TQP0403/todo-list/src/modules/app"
 	"TQP0403/todo-list/src/modules/auth"
 	"TQP0403/todo-list/src/modules/cache"
+	"TQP0403/todo-list/src/modules/file"
 	"TQP0403/todo-list/src/modules/jwt"
 	"TQP0403/todo-list/src/modules/task"
 	"os"
@@ -38,17 +39,20 @@ func Default(myDb db.IMyGormService) *Router {
 	jwtService := jwt.NewJwtService(os.Getenv("JWT_SECRET"))
 	authService := auth.NewService(authRepo, jwtService, cacheService)
 	taskService := task.NewService(taskRepo, cacheService)
+	fileService := file.NewService()
 
 	// controllers
 	appController := app.NewController(appService)
 	authController := auth.NewController(authService, jwtService)
 	taskController := task.NewController(taskService, jwtService)
+	fileController := file.NewController(fileService)
 
 	return &Router{
 		controllers: []IController{
 			appController,
 			authController,
 			taskController,
+			fileController,
 		},
 	}
 }
