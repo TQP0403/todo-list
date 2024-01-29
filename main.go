@@ -29,7 +29,7 @@ import (
 //	@license.name	Apache 2.0
 //	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host		localhost:3000
+// @host		localhost:8080
 // @BasePath	/api
 func main() {
 	config.Init()
@@ -43,14 +43,14 @@ func main() {
 
 	var myDb db.IMyGormService = db.Init()
 	if env := os.Getenv("GIN_ENV"); env != "production" {
-		// auto migration
-		myDb.Migrate()
+		// run auto migration with goroutine
+		go myDb.Migrate()
 		// swagger
 		router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 
-	s := server.Default(myDb)
-	s.Register(router)
+	serv := server.Default(myDb)
+	serv.Register(router)
 
 	router.Run(fmt.Sprintf(":%s", helper.GetDefaultEnv("GIN_PORT", "8080")))
 }
