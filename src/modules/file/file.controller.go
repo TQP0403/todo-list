@@ -2,9 +2,11 @@ package file
 
 import (
 	"TQP0403/todo-list/src/common"
+	"TQP0403/todo-list/src/modules/file/dtos"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 )
 
 type FileController struct {
@@ -23,19 +25,18 @@ func (ctrl *FileController) Register(router *gin.Engine) {
 }
 
 func (ctrl *FileController) handleUploadFile(ctx *gin.Context) {
-	fileHeader, err := ctx.FormFile("file")
-	if err != nil {
+	uploadDto := &dtos.UploadFileDto{}
+	if err := ctx.MustBindWith(uploadDto, binding.FormMultipart); err != nil {
 		cusErr := common.NewBadRequestError(err)
-		ctx.AbortWithStatusJSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
+		ctx.AbortWithStatusJSON(cusErr.StatusCode, cusErr.GetErrorResponse())
 		return
 	}
 
-	url, err := ctrl.service.UploadFile(fileHeader)
-	if err != nil {
+	// fileHeader, err := ctx.FormFile("file")
+	if url, err := ctrl.service.UploadFile(uploadDto.File); err != nil {
 		cusErr := common.NewInternalServerError(err)
-		ctx.AbortWithStatusJSON(cusErr.StatusCode, common.NewErrorResponse(cusErr))
-		return
+		ctx.AbortWithStatusJSON(cusErr.StatusCode, cusErr.GetErrorResponse())
+	} else {
+		ctx.JSON(http.StatusOK, common.NewSuccessResponse(url))
 	}
-
-	ctx.JSON(http.StatusOK, common.NewSuccessResponse(url))
 }

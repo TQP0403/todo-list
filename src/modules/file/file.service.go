@@ -22,6 +22,7 @@ type IFileService interface {
 
 type FileService struct {
 	enable       bool
+	validator    IFileValidator
 	s3Cloudfront string
 	s3Bucket     string
 	s3Client     *s3.Client
@@ -41,6 +42,7 @@ func NewService() *FileService {
 
 	return &FileService{
 		enable:       enable,
+		validator:    NewValidator(),
 		s3Cloudfront: s3Cloudfront,
 		s3Bucket:     s3Bucket,
 		s3Client:     s3.NewFromConfig(cfg),
@@ -48,12 +50,13 @@ func NewService() *FileService {
 }
 
 func (service *FileService) UploadFile(fileHeader *multipart.FileHeader) (string, error) {
+	// service enable check
 	if !service.enable {
-		return "", common.NewBadRequestError(errors.New("upload file service disable"))
+		return "", common.NewServiceUnavailableError(errors.New("upload file service disable"))
 	}
 
 	// validate upload file
-	if err := ValidateUploadFile(fileHeader); err != nil {
+	if err := service.validator.Validate(fileHeader); err != nil {
 		return "", common.NewBadRequestError(err)
 	}
 
