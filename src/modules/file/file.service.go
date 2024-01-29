@@ -4,6 +4,8 @@ import (
 	"TQP0403/todo-list/src/common"
 	"TQP0403/todo-list/src/helper"
 	"context"
+	"errors"
+	"log"
 	"mime/multipart"
 	"net/url"
 	"os"
@@ -27,10 +29,12 @@ type FileService struct {
 
 func NewService() *FileService {
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("ap-southeast-1"))
-
 	s3Cloudfront := os.Getenv("AWS_S3_CLOUD_FRONT")
 	s3Bucket := os.Getenv("AWS_S3_BUCKET")
 	enable := err == nil && len(s3Cloudfront) > 0 && len(s3Bucket) > 0
+	if err != nil {
+		log.Println(err)
+	}
 	if strings.LastIndex(s3Cloudfront, "https://") == -1 {
 		s3Cloudfront = "https://" + s3Cloudfront
 	}
@@ -45,7 +49,7 @@ func NewService() *FileService {
 
 func (service *FileService) UploadFile(fileHeader *multipart.FileHeader) (string, error) {
 	if !service.enable {
-		return "", nil
+		return "", common.NewBadRequestError(errors.New("upload file service disable"))
 	}
 
 	// validate upload file
