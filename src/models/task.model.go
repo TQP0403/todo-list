@@ -59,3 +59,16 @@ func (task *Task) MarshalBinary() (data []byte, err error) {
 func (task *Task) UnmarshalBinary(data []byte) error {
 	return json.Unmarshal(data, task)
 }
+
+func (task *Task) Clone() *Task {
+	return &Task{
+		ID:        task.ID,
+		UserID:    task.UserID,
+		Title:     task.Title,
+		Content:   task.Content,
+		Status:    task.Status,
+		CreatedAt: task.CreatedAt,
+		UpdatedAt: task.UpdatedAt,
+		DeletedAt: task.DeletedAt,
+	}
+}
