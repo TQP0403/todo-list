@@ -10,7 +10,7 @@ import (
 
 type ITaskService interface {
 	CreateTask(param *dtos.CreateTaskDto) (*models.Task, error)
-	GetListTask(userId int, pagination *common.Pagination) ([]models.Task, error)
+	GetListTask(userId int, pagination *common.Pagination) ([]*models.Task, error)
 	GetTaskById(userId, id int) (*models.Task, error)
 	UpdateTask(userId int, param *dtos.UpdateTaskDto) error
 	DeleteTask(userId, id int) error
@@ -33,7 +33,7 @@ func (service *TaskService) CreateTask(param *dtos.CreateTaskDto) (*models.Task,
 	return service.repo.CreateTask(param)
 }
 
-func (service *TaskService) GetListTask(userId int, pagination *common.Pagination) ([]models.Task, error) {
+func (service *TaskService) GetListTask(userId int, pagination *common.Pagination) ([]*models.Task, error) {
 	return service.repo.GetListTask(userId, pagination)
 }
 

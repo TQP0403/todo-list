@@ -1,31 +1,55 @@
-basePath: /
-host: localhost:3000
+definitions:
+  common.AppError:
+    properties:
+      error:
+        type: string
+      log:
+        type: string
+      message:
+        type: string
+    type: object
+  common.Pagination:
+    properties:
+      page:
+        minimum: 1
+        type: integer
+      pageSize:
+        maximum: 1000
+        minimum: 0
+        type: integer
+      total:
+        type: integer
+    type: object
+  common.SuccessResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      metadata:
+        $ref: '#/definitions/common.Pagination'
+    type: object
 info:
-  contact:
-    email: support@swagger.io
-    name: API Support
-    url: http://www.swagger.io/support
-  description: This is a sample server todo-list api.
-  license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
-  termsOfService: http://swagger.io/terms/
-  title: Swagger Example API
-  version: "1.0"
+  contact: {}
 paths:
-  /:
+  /auth/profile:
     get:
       consumes:
       - application/json
-      description: Hello
+      description: get user profile
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            type: string
-      summary: Hello
+            $ref: '#/definitions/common.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.AppError'
+      security:
+      - ApiKeyAuth: []
+      summary: Show an account
       tags:
-      - /
+      - auth
 swagger: "2.0"

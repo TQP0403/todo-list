@@ -10,7 +10,7 @@ import (
 
 type ITaskRepo interface {
 	CreateTask(param *dtos.CreateTaskDto) (*models.Task, error)
-	GetListTask(userId int, pagination *common.Pagination) ([]models.Task, error)
+	GetListTask(userId int, pagination *common.Pagination) ([]*models.Task, error)
 	GetTaskById(id int) (*models.Task, error)
 	UpdateTask(param *dtos.UpdateTaskDto) error
 	DeleteTask(id int) error
@@ -39,8 +39,8 @@ func (repo *TaskRepo) CreateTask(param *dtos.CreateTaskDto) (*models.Task, error
 	return task, nil
 }
 
-func (repo *TaskRepo) GetListTask(userId int, pagination *common.Pagination) ([]models.Task, error) {
-	var tasks []models.Task
+func (repo *TaskRepo) GetListTask(userId int, pagination *common.Pagination) ([]*models.Task, error) {
+	var tasks []*models.Task
 
 	err := repo.db.Model(&models.Task{}).
 		Where("user_id = ?", userId).

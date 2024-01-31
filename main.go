@@ -9,48 +9,48 @@ import (
 	"fmt"
 	"os"
 
-	_ "TQP0403/todo-list/docs"
-
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
+	docs "TQP0403/todo-list/docs"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-//	@title			Swagger Example API
-//	@version		1.0
-//	@description	This is a sample server todo-list api.
-//	@termsOfService	http://swagger.io/terms/
+func setupSwagger(r *gin.Engine) {
+	docs.SwaggerInfo.Title = "Swagger Example API"
+	docs.SwaggerInfo.Description = "This is a todo-list backend server."
+	docs.SwaggerInfo.Version = "1.0"
+	docs.SwaggerInfo.Host = "localhost:8080"
+	docs.SwaggerInfo.Schemes = []string{"http", "https"}
+	docs.SwaggerInfo.BasePath = "/api"
 
-//	@contact.name	API Support
-//	@contact.url	http://www.swagger.io/support
-//	@contact.email	support@swagger.io
+	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+}
 
-//	@license.name	Apache 2.0
-//	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
+func setupRouter() *gin.Engine {
+	r := gin.Default()
 
-// @host		localhost:8080
-// @BasePath	/api
-func main() {
-	config.Init()
-
-	router := gin.Default()
-	router.ForwardedByClientIP = true
-
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
-	router.Use(middlewares.CORSMiddleware())
+	r.ForwardedByClientIP = true
+	r.Use(middlewares.CORSMiddleware())
 
 	var myDb db.IMyGormService = db.Init()
+	serv := server.Default(myDb)
+	serv.Register(r)
+
 	if env := os.Getenv("GIN_ENV"); env != "production" {
 		// run auto migration with goroutine
 		go myDb.Migrate()
 		// swagger
-		router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+		setupSwagger(r)
 	}
 
-	serv := server.Default(myDb)
-	serv.Register(router)
+	return r
+}
 
-	router.Run(fmt.Sprintf(":%s", helper.GetDefaultEnv("GIN_PORT", "8080")))
+func main() {
+	config.Init()
+	r := setupRouter()
+
+	adrr := fmt.Sprintf(":%s", helper.GetDefaultEnv("GIN_PORT", "8080"))
+	r.Run(adrr)
 }

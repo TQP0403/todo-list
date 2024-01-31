@@ -32,8 +32,8 @@ type Task struct {
 	Title     string         `json:"title" gorm:"column:title;size:255"`
 	Content   string         `json:"content" gorm:"column:content"`
 	Status    TaskStatus     `json:"status" gorm:"column:status"`
-	CreatedAt *time.Time     `json:"createdAt,omitempty" gorm:"column:created_at"`
-	UpdatedAt *time.Time     `json:"updatedAt,omitempty" gorm:"column:updated_at"`
+	CreatedAt time.Time      `json:"createdAt,omitempty" gorm:"column:created_at"`
+	UpdatedAt time.Time      `json:"updatedAt,omitempty" gorm:"column:updated_at"`
 	DeletedAt gorm.DeletedAt `json:"deletedAt,omitempty" gorm:"column:deleted_at;index"`
 }
 

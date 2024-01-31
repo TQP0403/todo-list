@@ -81,6 +81,17 @@ func (ctrl *AuthController) handleRegister(ctx *gin.Context) {
 	}
 }
 
+// ShowAccount godoc
+//
+//	@Summary		Show an account
+//	@Description	get user profile
+//	@Tags				auth
+//	@Accept			json
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	common.SuccessResponse
+//	@Failure		400	{object}	common.AppError
+//	@Router			/auth/profile [get]
 func (ctrl *AuthController) handleGetProfile(ctx *gin.Context) {
 	userId := jwt.GetUserId(ctx)
 
