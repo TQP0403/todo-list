@@ -66,7 +66,7 @@ func (ctrl *TaskController) handleGetListTask(ctx *gin.Context) {
 		ctx.JSON(cusErr.StatusCode, cusErr)
 	} else {
 		res := common.NewPaginationResponse(pQuery, tasks)
-		ctx.JSON(http.StatusOK, res.GetSuccessResponse())
+		ctx.JSON(http.StatusOK, res)
 	}
 }
 

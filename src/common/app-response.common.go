@@ -13,3 +13,11 @@ func NewSimpleResponse() *SuccessResponse {
 func NewSuccessResponse(data interface{}) *SuccessResponse {
 	return &SuccessResponse{Message: "ok", Data: data}
 }
+
+func NewPaginationResponse(metadata *Pagination, data interface{}) *SuccessResponse {
+	return &SuccessResponse{
+		Message:  "ok",
+		Metadata: metadata,
+		Data:     data,
+	}
+}
