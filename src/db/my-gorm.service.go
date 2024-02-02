@@ -25,12 +25,18 @@ type IMyGormService interface {
 }
 
 func Init() *MyGormService {
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+	sslmode := ""
+	if os.Getenv("DB_SSL") != "true" {
+		sslmode = "sslmode=disable"
+	}
+
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s %s",
 		helper.GetDefaultEnv("DB_HOST", "localhost"),
 		helper.GetDefaultEnv("DB_PORT", "5432"),
 		helper.GetDefaultEnv("DB_USER", "postgres"),
 		helper.GetDefaultEnv("DB_PASS", ""),
 		helper.GetDefaultEnv("DB_NAME", "postgres"),
+		sslmode,
 	)
 
 	var newLogger logger.Interface
