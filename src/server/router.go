@@ -1,7 +1,6 @@
 package server
 
 import (
-	"TQP0403/todo-list/src/db"
 	"TQP0403/todo-list/src/modules/app"
 	"TQP0403/todo-list/src/modules/auth"
 	"TQP0403/todo-list/src/modules/cache"
@@ -11,6 +10,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type IController interface {
@@ -28,10 +28,10 @@ func (r *Router) Register(router *gin.Engine) {
 	}
 }
 
-func Default(myDb db.IMyGormService) *Router {
+func Default(db *gorm.DB) *Router {
 	// repos
-	authRepo := auth.NewRepo(myDb.GetDB())
-	taskRepo := task.NewRepo(myDb.GetDB())
+	authRepo := auth.NewRepo(db)
+	taskRepo := task.NewRepo(db)
 
 	// services
 	cacheService := cache.NewDefaultCacheService()

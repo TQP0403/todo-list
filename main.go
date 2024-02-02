@@ -27,15 +27,27 @@ func setupSwagger(r *gin.Engine) {
 	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
 
-func setupRouter() *gin.Engine {
+func setupRouter(myDb db.IMyGormService) *gin.Engine {
 	r := gin.Default()
 
 	r.ForwardedByClientIP = true
 	r.Use(middlewares.CORSMiddleware())
 
-	var myDb db.IMyGormService = db.Init()
-	serv := server.Default(myDb)
+	serv := server.Default(myDb.GetDB())
 	serv.Register(r)
+
+	return r
+}
+
+func main() {
+	// load .env file
+	config.Init()
+
+	// connect database
+	myDb := db.Init()
+
+	// setup gin router
+	r := setupRouter(myDb)
 
 	if env := os.Getenv("GIN_ENV"); env != "production" {
 		// run auto migration with goroutine
@@ -44,13 +56,8 @@ func setupRouter() *gin.Engine {
 		setupSwagger(r)
 	}
 
-	return r
-}
-
-func main() {
-	config.Init()
-	r := setupRouter()
-
 	adrr := fmt.Sprintf(":%s", helper.GetDefaultEnv("GIN_PORT", "8080"))
+
+	// run gin app
 	r.Run(adrr)
 }
