@@ -18,13 +18,6 @@ const (
 	Cancel
 )
 
-// enum TaskStatus implement stringer
-var taskStatusStr = []string{"InProccess", "Done", "Cancel"}
-
-func (e TaskStatus) String() string {
-	return taskStatusStr[e]
-}
-
 type Task struct {
 	ID        int            `json:"id" gorm:"primarykey"`
 	UserID    int            `json:"userId" gorm:"column:user_id"`
@@ -43,7 +36,7 @@ func (Task) TableName() string {
 
 func (task Task) String() string {
 	return fmt.Sprintf(
-		"[task] id:%d - user_id:%d - title:%s - status:%s - content:%s\n",
+		"[task] id:%d - user_id:%d - title:%s - status:%d - content:%s\n",
 		task.ID,
 		task.UserID,
 		task.Title,

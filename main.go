@@ -50,7 +50,6 @@ func setupRouter() *gin.Engine {
 func main() {
 	config.Init()
 	r := setupRouter()
-	setupSwagger(r)
 
 	adrr := fmt.Sprintf(":%s", helper.GetDefaultEnv("GIN_PORT", "8080"))
 	r.Run(adrr)
