@@ -51,10 +51,9 @@ func Init() *MyGormService {
 		}),
 		&gorm.Config{
 			Logger:                   newLogger,
-			PrepareStmt:              false,
+			PrepareStmt:              true,
 			DisableNestedTransaction: true,
 			NamingStrategy: schema.NamingStrategy{
-				// TablePrefix:   "YOUR_SCHEMA_NAME.", // schema name
 				SingularTable: false,
 			},
 		},
@@ -74,7 +73,7 @@ func Init() *MyGormService {
 	sqlDB.SetMaxIdleConns(10)
 
 	// SetMaxOpenConns sets the maximum number of open connections to the database.
-	maxConn := helper.GetDefaultNumber(helper.ParseInt(helper.GetDefaultEnv("DB_CONNECTION_POOL", "0")), 100)
+	maxConn := helper.GetDefaultNumber(helper.ParseInt(os.Getenv("DB_CONNECTION_POOL")), 100)
 
 	sqlDB.SetMaxOpenConns(maxConn)
 
